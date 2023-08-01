@@ -1,0 +1,12 @@
+
+newmtl Projet0_DIFFUSE_DeLorean
+Ka  0.6 0.6 0.6
+Kd  0.6 0.6 0.6
+Ks  0.1 0.1 0.1
+d  1.0
+Ns  150.0
+illum 2
+map_Kd Projet0_DIFFUSE_DoLorean.psd
+
+
+
