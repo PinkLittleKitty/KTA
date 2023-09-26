@@ -3,7 +3,7 @@ using UnityEngine;
 /*
  * Swipe Input script for Unity by @fonserbc, free to use wherever
  *
- * Attack to a gameObject, check the static booleans to check if a swipe has been detected this frame
+ * Attach to a gameObject, check the static booleans to check if a swipe has been detected this frame
  * Eg: if (SwipeInput.swipedRight) ...
  *
  * 

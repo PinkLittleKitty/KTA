@@ -4,20 +4,18 @@ using System.Collections;
 
 public class CargarEscenaInicial : MonoBehaviour
 {
-
-    // Use this for initialization
     void Start()
     {
-        if (PlayerPrefs.GetInt("BananaLaunch") == 0)
+        if (PlayerPrefs.GetInt("Launch") == 0)
         {
-            //First launch
-            PlayerPrefs.SetInt("BananaLaunch", 1);
+            //Primer Lanzamiento
+            PlayerPrefs.SetInt("Launch", 1);
             PlayerPrefs.SetFloat("Chunks", 9);
-            SceneManager.LoadScene("Selección");
+            SceneManager.LoadScene("Seleccion");
         }
         else
         {
-            //Load scene_02 if its not the first launch
+            //Cargar el juego si no es el primer lanzamiento
             SceneManager.LoadScene("Game");
         }
     }

@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Assets.Rendering
 {
 	/// <summary>
-	/// Description of MarchingCubes.
-	/// </summary>
+    /// Clase que implementa el algoritmo de Marching Cubes para generar mallas.
+    /// </summary>
 	public static class MarchingCubes
 	{
 		#region Tables

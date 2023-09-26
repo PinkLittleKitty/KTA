@@ -7,7 +7,6 @@ using Assets.Generation;
 
 public class Movement : MonoBehaviour
 {
-
     public float Speed = 16;
     public float TurnSpeed = 3f;
     public TrailRenderer LeftTrail, RightTrail;
@@ -23,13 +22,7 @@ public class Movement : MonoBehaviour
     private float _speed = 0;
     public Joystick joystick;
     public GameObject JoystickContainer;
-    public Image OwO;
-    public int Controles;
     public Vector3 baseAcceleration;
-    public float dashSpeed = 20;
-    public float dashTime = 1;
-    public GameObject Navecita;
-    public GameObject Modelito;
 
     float hAxis;
     float vAxis;
@@ -41,6 +34,7 @@ public class Movement : MonoBehaviour
 
     void Start()
     {
+        // Inicialización de variables y componentes al comienzo del juego
         Debris = GameObject.FindGameObjectWithTag("Debris");
         LeftSource = GameObject.FindGameObjectWithTag("LeftSource").GetComponent<AudioSource>();
         RightSource = GameObject.FindGameObjectWithTag("RightSource").GetComponent<AudioSource>();
@@ -50,23 +44,25 @@ public class Movement : MonoBehaviour
 
     public void Lock()
     {
+        // Bloquear el movimiento del jugador
         _lock = true;
     }
 
     public void Unlock()
     {
+        // Desbloquear el movimiento del jugador
         _lock = false;
     }
 
-    // Update is called once per frame
     void Update()
     {
+        // Actualización del juego en cada frame
 
-
-
+        // Ajustar el volumen de los efectos de sonido de los trails
         LeftSource.volume = Mathf.Lerp(LeftSource.volume, _originalVolume * _leftTargetVolume, Time.deltaTime * 2f);
         RightSource.volume = Mathf.Lerp(RightSource.volume, _originalVolume * _rightTargetVolume, Time.deltaTime * 2f);
 
+        // Detener el sonido si el volumen es muy bajo
         if (LeftSource.volume < 0.05f)
             LeftSource.Stop();
 
@@ -76,12 +72,16 @@ public class Movement : MonoBehaviour
         if (_lock)
             return;
 
+        // Lerp para ajustar la velocidad gradualmente
         _speed = Mathf.Lerp(_speed, Speed, Time.deltaTime * .25f);
         transform.parent.position += transform.forward * Time.deltaTime * 4 * _speed;
         transform.localRotation = Quaternion.Slerp(transform.localRotation, Quaternion.Euler(Vector3.zero), Time.deltaTime * 2.5f);
 
+        // Ángulos de rotación para determinar si se activan los trails
         float zAngle = transform.localRotation.eulerAngles.z;
         float xAngle = transform.localRotation.eulerAngles.x;
+
+        // Activar el trail izquierdo si se cumplen ciertas condiciones
         if (zAngle > 45 && zAngle < 135 || zAngle > 225 && zAngle < 315 || xAngle > 45 && xAngle < 90 || xAngle > 270 && xAngle < 315)
         {
             StartTrail(ref LeftTrail, LeftPosition);
@@ -97,6 +97,7 @@ public class Movement : MonoBehaviour
             _leftTargetVolume = 0;
         }
 
+        // Activar el trail derecho si se cumplen ciertas condiciones
         if (zAngle > 45 && zAngle < 135 || zAngle > 225 && zAngle < 315 || xAngle > 45 && xAngle < 90 || xAngle > 270 && xAngle < 315)
         {
             StartTrail(ref RightTrail, RightPosition);
@@ -112,8 +113,11 @@ public class Movement : MonoBehaviour
             _rightTargetVolume = 0;
         }
 
+        // Escala para ajustar el movimiento en función de la escala de tiempo
         float scale = (Time.timeScale != 1) ? (1 / Time.timeScale) * .5f : 1;
         int Controles = PlayerPrefs.GetInt("Control");
+
+        // Obtener entrada del jugador en función del tipo de control seleccionado
         if (Controles == 1)
         {
             JoystickContainer = GameObject.FindGameObjectWithTag("Joystick");
@@ -135,55 +139,20 @@ public class Movement : MonoBehaviour
             vAxis = Input.acceleration.y - baseAcceleration.y;
         }
 
+        // Rotación del jugador en función de la entrada del jugador
         if (Options.Invert)
             transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.right * Time.deltaTime * 64f * TurnSpeed * scale * vAxis);
         else
             transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.right * Time.deltaTime * 64f * TurnSpeed * scale * -vAxis);
 
-
+        // Rotación y movimiento lateral del jugador en función de la entrada del jugador
         transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.forward * Time.deltaTime * 64f * TurnSpeed * scale * -hAxis);
         transform.parent.Rotate(-Vector3.up * Time.deltaTime * 64f * TurnSpeed * scale * -hAxis);
-
-        if (SwipeInput.swipedRight)
-        {
-            StartCoroutine(DashRight());
-        }
-
-        if (SwipeInput.swipedLeft)
-        {
-            StartCoroutine(DashLeft());
-        }
-
-    }
-
-    IEnumerator DashRight()
-    {
-        float startTime = Time.time;
-
-        while(Time.time < startTime + dashTime)
-        {
-            Navecita.transform.Translate(Vector3.right * dashSpeed * Time.deltaTime);
-            Modelito.transform.Rotate( 0f, 10f, 0f, Space.Self);
-            
-            yield return null;
-        }
-    }
-
-    IEnumerator DashLeft()
-    {
-        float startTime = Time.time;
-
-        while(Time.time < startTime + dashTime)
-        {
-            Navecita.transform.Translate(Vector3.left * dashSpeed * Time.deltaTime);
-            Modelito.transform.Rotate( 0f, -10f, 0f, Space.Self);
-
-            yield return null;
-        }
     }
 
     void StartTrail(ref TrailRenderer Trail, Vector3 Position)
     {
+        // Iniciar el trail en una posición específica
         if (Trail != null)
             return;
         GameObject go = new GameObject("Trail");
@@ -199,6 +168,7 @@ public class Movement : MonoBehaviour
 
     void StopTrail(ref TrailRenderer Trail)
     {
+        // Detener el trail
         if (Trail == null)
             return;
 

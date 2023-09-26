@@ -4,15 +4,20 @@ using UnityEngine;
 
 public class RiskPoints : MonoBehaviour
 {
+    // Referencia al colisionador asociado a este objeto
     public Collider Colision;
-    public int RiskPointsNumber;
-    public GameObject World;
-    
 
-	void Start()
-        {
-            World = GameObject.FindGameObjectWithTag ("World");
-	    }
+    // Cantidad de puntos de riesgo
+    public int RiskPointsNumber;
+
+    // Referencia al objeto "World"
+    public GameObject World;
+
+    void Start()
+    {
+        // Busca el objeto con la etiqueta "World" y lo asigna a la variable "World"
+        World = GameObject.FindGameObjectWithTag("World");
+    }
 
     void Update()
     {
@@ -21,22 +26,17 @@ public class RiskPoints : MonoBehaviour
         ray1.origin = transform.position;
         ray1.direction = Vector3.left;
 
-         if (Physics.Raycast(ray1, out hit))
-         {
-            Debug.DrawLine(ray1.origin, hit.point);
-            //target = hit.collider.transform.parent.gameObject;
-         }
-        //void OnTriggerEnter(Collider other)
-        //{
-        //    if(other.transform.parent.gameObject.CompareTag("World"))
-        //    {
-        //        RiskPointsNumber = 3;
-        //    }
-        //}
-
-        void OnTriggerExit(Collider other)
+        // Realiza un raycast hacia la izquierda desde la posición de este objeto
+        if (Physics.Raycast(ray1, out hit))
         {
-            PlayerPrefs.SetInt("HighScore", (int) PlayerPrefs.GetInt("HighScore") + RiskPointsNumber);
-        }         
+            Debug.DrawLine(ray1.origin, hit.point);
+        }
+    }
+
+    // Se ejecuta cuando este objeto sale de un colisionador
+    void OnTriggerExit(Collider other)
+    {
+        // Incrementa la puntuación máxima del jugador utilizando PlayerPrefs
+        PlayerPrefs.SetInt("HighScore", PlayerPrefs.GetInt("HighScore") + RiskPointsNumber);
     }
 }

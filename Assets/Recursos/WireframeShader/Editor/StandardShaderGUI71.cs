@@ -1,6 +1,5 @@
-// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
-// 2017.1.0f2
-
+#pragma warning disable 0612
+#pragma warning disable 0618
 #pragma warning disable 0414
 #if !UNITY_5
 using System;

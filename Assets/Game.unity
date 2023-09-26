@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.20816046, g: 0.0827555, b: 0.120034955, a: 1}
+  m_IndirectSpecularColor: {r: 0.20815536, g: 0.0827555, b: 0.12003087, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -705,7 +705,7 @@ Transform:
   m_GameObject: {fileID: 169551275}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0.5}
-  m_LocalScale: {x: 2.1666667, y: 1, z: 1}
+  m_LocalScale: {x: 1.3333334, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1389411105}
@@ -1683,8 +1683,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 12800000, guid: 04a842e316b6f44bf8da702de26a8ed6, type: 3}
-    m_FontSize: 96
+    m_Font: {fileID: 12800000, guid: cbe57eeca732c4739ac639ef0edf2759, type: 3}
+    m_FontSize: 72
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -3703,6 +3703,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
   m_HorizontalAxis: Horizontal
   m_VerticalAxis: Vertical
   m_SubmitButton: Submit
@@ -9620,7 +9621,7 @@ MonoBehaviour:
     ModeOverride: 2
     LensShift: {x: 0, y: 0}
     GateFit: 2
-    m_SensorSize: {x: 2.1666667, y: 1}
+    m_SensorSize: {x: 1, y: 1}
   m_Transitions:
     m_BlendHint: 3
     m_InheritPosition: 0
