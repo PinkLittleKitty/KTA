@@ -1,9 +1,7 @@
-using GooglePlayGames;
-using GooglePlayGames.BasicApi;
 using UnityEngine;
-
 public class PlayGamesScript : MonoBehaviour
 {
+    /*
     void Start()
     {
         PlayGamesClientConfiguration config = new PlayGamesClientConfiguration.Builder().Build();
@@ -66,4 +64,5 @@ public class PlayGamesScript : MonoBehaviour
         });
     }
     #endregion
+    */
 }

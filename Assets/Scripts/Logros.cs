@@ -12,7 +12,7 @@ public class Logros : MonoBehaviour
 
         if (TimeControl.score < 100)
         {
-            PlayGamesScript.UnlockAchievement(GPGSIds.achievement_test);
+            //PlayGamesScript.UnlockAchievement(GPGSIds.achievement_test);
         }
 
     }
