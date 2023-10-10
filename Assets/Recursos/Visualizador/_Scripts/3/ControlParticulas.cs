@@ -20,7 +20,7 @@ public class ControlParticulas : MonoBehaviour {
     {
         velocidad = AudioSpectrum.bandBuffer[0] * multiplicador;
 
-        main.simulationSpeed = velocidad;
-        main.startSpeed = speed;
+        //main.simulationSpeed = velocidad;
+        //main.startSpeed = speed;
     }
 }

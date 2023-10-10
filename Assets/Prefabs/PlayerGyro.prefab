@@ -82,12 +82,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f08ac874d4274c641ab9dff2135a6745, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  keyTimer: 0
-  keyLength: 5
-  isKeyActive: 0
-  taptap: {fileID: 9007229756822816141}
-  CanvasTc: {fileID: 0}
-  timerTutowo: {fileID: 0}
+  timer: 0
+  keyPressDuration: 5
+  isKeyPressActive: 0
+  keyIndicator: {fileID: 9007229756822816141}
+  canvas: {fileID: 7789622446664338331}
+  player: {fileID: 153744252255351659}
 --- !u!1 &345041030304683963
 GameObject:
   m_ObjectHideFlags: 0
@@ -774,13 +774,7 @@ MonoBehaviour:
   SwooshClip: {fileID: 8300000, guid: b0db1972f5dfd1b4f9b1d1cb55c4fef3, type: 3}
   joystick: {fileID: 0}
   JoystickContainer: {fileID: 2249660923897842293}
-  OwO: {fileID: 9007229756822816141}
-  Controles: 0
   baseAcceleration: {x: 0, y: 0, z: 0}
-  dashSpeed: 35
-  dashTime: 0.7
-  Navecita: {fileID: 153744252255351659}
-  Modelito: {fileID: 3054560122192552426}
 --- !u!1 &7789622446664338331
 GameObject:
   m_ObjectHideFlags: 0

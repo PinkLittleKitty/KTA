@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 4329532083364398}
   - component: {fileID: 114330974736651708}
   - component: {fileID: 54858096489146716}
+  - component: {fileID: 5881361427174660004}
   m_Layer: 0
   m_Name: PlayerIzq
   m_TagString: Player
@@ -69,6 +70,24 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &5881361427174660004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1487220595160186}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f08ac874d4274c641ab9dff2135a6745, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timer: 0
+  keyPressDuration: 5
+  isKeyPressActive: 0
+  keyIndicator: {fileID: 7169524835303618941}
+  canvas: {fileID: 7943559553010928778}
+  player: {fileID: 1487220595160186}
 --- !u!1 &499523485371469994
 GameObject:
   m_ObjectHideFlags: 0
@@ -503,13 +522,7 @@ MonoBehaviour:
   SwooshClip: {fileID: 8300000, guid: b0db1972f5dfd1b4f9b1d1cb55c4fef3, type: 3}
   joystick: {fileID: 2098426442839018848}
   JoystickContainer: {fileID: 2098426442839018852}
-  OwO: {fileID: 7169524835303618941}
-  Controles: 0
   baseAcceleration: {x: 0, y: 0, z: 0}
-  dashSpeed: 35
-  dashTime: 0.7
-  Navecita: {fileID: 1487220595160186}
-  Modelito: {fileID: 2901592721215629051}
 --- !u!1 &7943559553010928778
 GameObject:
   m_ObjectHideFlags: 0
@@ -1012,12 +1025,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f08ac874d4274c641ab9dff2135a6745, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  keyTimer: 0
-  keyLength: 5
-  isKeyActive: 0
-  taptap: {fileID: 7169524835303618941}
-  CanvasTc: {fileID: 0}
-  timerTutowo: {fileID: 0}
+  timer: 0
+  keyPressDuration: 0
+  isKeyPressActive: 0
+  keyIndicator: {fileID: 0}
+  canvas: {fileID: 0}
+  player: {fileID: 0}
 --- !u!224 &2098426442839018853 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8170153791668043268, guid: 0d230cc8be529a542a08cb878ab14b18,
