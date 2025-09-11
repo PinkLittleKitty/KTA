@@ -6,65 +6,100 @@ using UnityEngine.UI;
 
 public class World : MonoBehaviour {
 
-    public GameObject Player; // Referencia al objeto jugador en el mundo.
-    public Material WorldMaterial; // Material utilizado para el mundo.
-    public Vector3 PlayerPosition, PlayerOrientation; // Posición y orientación del jugador.
-    public int GenQueue, MeshQueue; // Contadores de cola para generación y mallas.
-    public readonly Dictionary<Vector3, Chunk> Chunks = new Dictionary<Vector3, Chunk>(); // Diccionario para almacenar fragmentos de terreno.
-    private MeshQueue _meshQueue; // Cola para mallas.
-    private GenerationQueue _generationQueue; // Cola para generación.
-    public int ChunkLoaderRadius = 8; // Radio de carga de fragmentos.
-    public bool Loaded { get; set; } // Indica si el mundo ha sido cargado.
-    public Slider sliderUI; // Referencia al control deslizante en la interfaz de usuario.
-    public Text chunksNum; // Referencia al texto para mostrar el número de fragmentos.
+    public GameObject Player;
+    public Material WorldMaterial;
+    public Vector3 PlayerPosition, PlayerOrientation;
+    public int GenQueue, MeshQueue;
+    public readonly Dictionary<Vector3, Chunk> Chunks = new Dictionary<Vector3, Chunk>();
+    private MeshQueue _meshQueue;
+    private GenerationQueue _generationQueue;
+    public int ChunkLoaderRadius = 8;
+    public bool Loaded { get; set; }
+    public Slider sliderUI;
+    public Text chunksNum;
 
     void Awake(){
-        Application.targetFrameRate = 60; // Establecer la velocidad de fotogramas objetivo a 60 FPS.
-        _meshQueue = new MeshQueue (this); // Inicializar la cola de mallas.
-        _generationQueue = new GenerationQueue (this); // Inicializar la cola de generación.
-        Loaded = true; // Marcar el mundo como cargado.
-        sliderUI.value = PlayerPrefs.GetFloat("Chunks"); // Configurar el valor del control deslizante desde las preferencias del jugador.
+        Application.targetFrameRate = 60;
+
+        Assets.Generation.OpenSimplexNoise.Load(System.DateTime.Now.Ticks);
+        
+        _meshQueue = new MeshQueue (this);
+        _generationQueue = new GenerationQueue (this);
+        Loaded = true;
+        sliderUI.value = PlayerPrefs.GetFloat("Chunks");
     }
 
     void Update(){
 
-        PlayerPosition = Player.transform.position; // Actualizar la posición del jugador.
-        PlayerOrientation = Player.transform.forward; // Actualizar la orientación del jugador.
+        PlayerPosition = Player.transform.position;
+        PlayerOrientation = Player.transform.forward;
 
         int _genCount = 0, _meshCount = 0;
         foreach (KeyValuePair<Vector3, Chunk> Pair in Chunks) {
             if (!Pair.Value.IsGenerated)
-                _genCount++; // Incrementar el contador de generación si el fragmento no está generado.
+                _genCount++;
 
             if (Pair.Value.ShouldBuild)
-                _meshCount++; // Incrementar el contador de mallas si se debe construir una malla para el fragmento.
+                _meshCount++;
         }
 
-        GenQueue = _genCount; // Actualizar la cola de generación.
-        MeshQueue = _meshCount; // Actualizar la cola de mallas.
+        GenQueue = _genCount;
+        MeshQueue = _meshCount;
 
-        ChunkLoaderRadius = (int)sliderUI.value; // Actualizar el radio de carga de fragmentos desde el control deslizante.
+        ChunkLoaderRadius = (int)sliderUI.value;
+
+        if (Time.frameCount % 60 == 0)
+        {
+            CheckAndRepairGaps();
+        }
+    }
+
+    private void CheckAndRepairGaps()
+    {
+        Vector3 playerChunkPos = ToChunkSpace(PlayerPosition);
+        int checkRadius = Mathf.Min(ChunkLoaderRadius / 2, 4);
+        
+        for (int x = -checkRadius; x <= checkRadius; x++)
+        {
+            for (int z = -checkRadius; z <= checkRadius; z++)
+            {
+                for (int y = -checkRadius; y <= checkRadius; y++)
+                {
+                    Vector3 chunkOffset = playerChunkPos + new Vector3(x * Chunk.ChunkSize, y * Chunk.ChunkSize, z * Chunk.ChunkSize);
+                    Chunk chunk = GetChunkByOffset(chunkOffset);
+                    
+                    if (chunk != null && chunk.IsGenerated && !chunk.ShouldBuild && chunk.HasMinimumNeighbours())
+                    {
+                        if (!ContainsMeshQueue(chunk))
+                        {
+                            chunk.ShouldBuild = true;
+                            AddToQueue(chunk, true);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     void OnApplicationQuit(){
-        _meshQueue.Stop = true; // Detener la cola de mallas al salir de la aplicación.
-        _generationQueue.Stop = true; // Detener la cola de generación al salir de la aplicación.
+        _meshQueue.Stop = true;
+        _generationQueue.Stop = true;
     }
 
     public void SortGenerationQueue(){
-        _generationQueue.Sort (); // Ordenar la cola de generación.
+        _generationQueue.Sort ();
     }
 
     public void SortMeshQueue(){
-        _meshQueue.Sort (); // Ordenar la cola de mallas.
+        _meshQueue.Sort ();
     }
 
     public void AddToQueue(Chunk Chunk, bool DoMesh)
     {
         if (DoMesh) {
-            _meshQueue.Add (Chunk); // Agregar el fragmento a la cola de mallas si es necesario.
+            _meshQueue.Add (Chunk);
         } else {
-            _generationQueue.Add (Chunk); // Agregar el fragmento a la cola de generación si no es necesario construir una malla.
+            _generationQueue.Add (Chunk);
         }
     }
 
@@ -72,8 +107,44 @@ public class World : MonoBehaviour {
     {
         lock (this.Chunks) {
             if (!this.Chunks.ContainsKey (Offset)) {
-                this.Chunks.Add (Offset, Chunk); // Agregar el fragmento al diccionario si no existe previamente.
-                this._generationQueue.Add (Chunk); // Agregar el fragmento a la cola de generación.
+                this.Chunks.Add (Offset, Chunk);
+                this._generationQueue.Add (Chunk);
+
+                NotifyNeighboursOfNewChunk(Offset);
+            }
+        }
+    }
+
+    private void NotifyNeighboursOfNewChunk(Vector3 newChunkOffset)
+    {
+        Vector3[] neighbourOffsets = {
+            new Vector3(-Chunk.ChunkSize, 0, 0),
+            new Vector3(Chunk.ChunkSize, 0, 0),
+            new Vector3(0, -Chunk.ChunkSize, 0),
+            new Vector3(0, Chunk.ChunkSize, 0),
+            new Vector3(0, 0, -Chunk.ChunkSize),
+            new Vector3(0, 0, Chunk.ChunkSize),
+            new Vector3(-Chunk.ChunkSize, 0, -Chunk.ChunkSize),
+            new Vector3(-Chunk.ChunkSize, 0, Chunk.ChunkSize),
+            new Vector3(Chunk.ChunkSize, 0, -Chunk.ChunkSize),
+            new Vector3(Chunk.ChunkSize, 0, Chunk.ChunkSize),
+            new Vector3(-Chunk.ChunkSize, -Chunk.ChunkSize, 0),
+            new Vector3(-Chunk.ChunkSize, Chunk.ChunkSize, 0),
+            new Vector3(Chunk.ChunkSize, -Chunk.ChunkSize, 0),
+            new Vector3(Chunk.ChunkSize, Chunk.ChunkSize, 0),
+            new Vector3(0, -Chunk.ChunkSize, -Chunk.ChunkSize),
+            new Vector3(0, -Chunk.ChunkSize, Chunk.ChunkSize),
+            new Vector3(0, Chunk.ChunkSize, -Chunk.ChunkSize),
+            new Vector3(0, Chunk.ChunkSize, Chunk.ChunkSize)
+        };
+
+        foreach (Vector3 offset in neighbourOffsets)
+        {
+            Vector3 neighbourPos = newChunkOffset + offset;
+            Chunk neighbour = GetChunkByOffset(neighbourPos);
+            if (neighbour != null && neighbour.IsGenerated && !neighbour.ShouldBuild && neighbour.HasMinimumNeighbours())
+            {
+                neighbour.ShouldBuild = true;
             }
         }
     }
@@ -81,16 +152,16 @@ public class World : MonoBehaviour {
     public void RemoveChunk(Chunk Chunk) { 
         lock(Chunks){
             if (Chunks.ContainsKey (Chunk.Position))
-                Chunks.Remove (Chunk.Position); // Eliminar el fragmento del diccionario si existe.
+                Chunks.Remove (Chunk.Position);
 
-            _meshQueue.Remove (Chunk); // Eliminar el fragmento de la cola de mallas.
-            _generationQueue.Remove (Chunk); // Eliminar el fragmento de la cola de generación.
+            _meshQueue.Remove (Chunk);
+            _generationQueue.Remove (Chunk);
         }
-        Chunk.Dispose (); // Liberar recursos del fragmento.
+        Chunk.Dispose ();
     }
 
     public bool ContainsMeshQueue(Chunk chunk){
-        return _meshQueue.Contains(chunk); // Verificar si la cola de mallas contiene el fragmento.
+        return _meshQueue.Contains(chunk);
     }
 
     public Vector3 ToBlockSpace(Vector3 Vec3){
@@ -107,7 +178,7 @@ public class World : MonoBehaviour {
         int Y = (int) Mathf.Floor( (Vec3.y - ChunkY) / (float) Chunk.ChunkSize );
         int Z = (int) Mathf.Floor( (Vec3.z - ChunkZ) / (float) Chunk.ChunkSize );
 
-        return new Vector3(X, Y ,Z); // Convertir las coordenadas a espacio de bloques.
+        return new Vector3(X, Y ,Z);
     }
         
     public Chunk GetChunkAt(Vector3 Vec3){
@@ -119,7 +190,7 @@ public class World : MonoBehaviour {
         ChunkY *= Chunk.ChunkSize;
         ChunkZ *= Chunk.ChunkSize;
             
-        return this.GetChunkByOffset(ChunkX, ChunkY, ChunkZ); // Obtener el fragmento en las coordenadas especificadas.
+        return this.GetChunkByOffset(ChunkX, ChunkY, ChunkZ);
     }
         
     public Vector3 ToChunkSpace(Vector3 Vec3){
@@ -131,24 +202,24 @@ public class World : MonoBehaviour {
         ChunkY *= Chunk.ChunkSize;
         ChunkZ *= Chunk.ChunkSize;    
         
-        return new Vector3(ChunkX, ChunkY, ChunkZ); // Convertir las coordenadas a espacio de fragmentos.
+        return new Vector3(ChunkX, ChunkY, ChunkZ);
     }
     
     public Chunk GetChunkByOffset(float X, float Y, float Z) {
-        return this.GetChunkByOffset (new Vector3(X,Y,Z)); // Obtener el fragmento en las coordenadas especificadas.
+        return this.GetChunkByOffset (new Vector3(X,Y,Z));
     }
 
     public Chunk GetChunkByOffset(Vector3 Offset) {
         lock(Chunks){
             if (Chunks.ContainsKey (Offset))
-                return Chunks [Offset]; // Obtener el fragmento del diccionario si existe.
+                return Chunks [Offset];
         }
-        return null; // Devolver nulo si el fragmento no se encuentra en el diccionario.
+        return null;
     }
 
     public void ActualizarChunks()
     {
-        PlayerPrefs.SetFloat("Chunks", sliderUI.value); // Actualizar las preferencias del jugador con el valor del control deslizante.
-        chunksNum.text = PlayerPrefs.GetFloat("Chunks").ToString(); // Actualizar el texto con el número de fragmentos.
+        PlayerPrefs.SetFloat("Chunks", sliderUI.value);
+        chunksNum.text = PlayerPrefs.GetFloat("Chunks").ToString();
     }
 }

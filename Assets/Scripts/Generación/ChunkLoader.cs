@@ -40,16 +40,14 @@ namespace Assets.Generation
         {
             while (true)
             {
-                // Salir si se debe detener
                 if (Stop) break;
 
-                // Saltar si no está habilitado o el mundo no está cargado
                 if (!Enabled || !World.Loaded)
                     goto SLEEP;
 
                 Offset = World.ToChunkSpace(_playerPosition);
 
-                if (Offset != _lastOffset)
+                if (Offset != _lastOffset || World.ChunkLoaderRadius != _lastRadius)
                 {
                     for (int _x = -World.ChunkLoaderRadius / 2; _x < World.ChunkLoaderRadius / 2; _x++)
                     {
@@ -73,7 +71,7 @@ namespace Assets.Generation
                             }
                         }
                     }
-                    _lastRadius = Options.ChunkLoaderRadius;
+                    _lastRadius = World.ChunkLoaderRadius;
                     _lastOffset = Offset;
                     World.SortGenerationQueue();
                 }
@@ -102,13 +100,13 @@ namespace Assets.Generation
                         continue;
                     }
 
-                    if ((Chunks[i].Position - _playerPosition).sqrMagnitude > (Options.ChunkLoaderRadius) * .5f * Chunk.ChunkSize * (Options.ChunkLoaderRadius) * Chunk.ChunkSize * .5f)
+                    if ((Chunks[i].Position - _playerPosition).sqrMagnitude > (World.ChunkLoaderRadius) * .5f * Chunk.ChunkSize * (World.ChunkLoaderRadius) * Chunk.ChunkSize * .5f)
                     {
                         World.RemoveChunk(Chunks[i]);
                         continue;
                     }
 
-                    if (Chunks[i].ShouldBuild && Chunks[i].IsGenerated && !World.ContainsMeshQueue(Chunks[i]) && Chunks[i].NeighboursExists)
+                    if (Chunks[i].ShouldBuild && Chunks[i].IsGenerated && !World.ContainsMeshQueue(Chunks[i]) && Chunks[i].HasMinimumNeighbours())
                     {
                         World.AddToQueue(Chunks[i], true);
                         AddedNew = true;

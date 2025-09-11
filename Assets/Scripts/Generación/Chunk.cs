@@ -47,13 +47,18 @@ namespace Assets.Generation
             _generator.Generate(_blocks, Position, ChunkSize);
             IsGenerated = true;
             ShouldBuild = true;
+            
+            // Después de generar, verificar si se puede construir inmediatamente
+            if (HasMinimumNeighbours())
+            {
+                _world.AddToQueue(this, true);
+            }
         }
 
         public void Build()
         {
             // Construcción del mesh del chunk
             ShouldBuild = false;
-            bool completelyBuilt = true;
 
             int WIDTH = _blocks.Length;
             int HEIGHT = _blocks[0].Length;
@@ -86,9 +91,6 @@ namespace Assets.Generation
                         bool Success;
                         CreateCell(x, y, z, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk,
                             TopFrontChunk, TopRightFrontChunk, TopChunk, Cell, out Success);
-
-                        if (!Success)
-                            completelyBuilt = false;
 
                         if (!MarchingCubes.Usable(0f, Cell))
                             continue;
@@ -127,14 +129,18 @@ namespace Assets.Generation
             Cell.Density[6] = GetNeighbourDensity(_x + Lod, _y + Lod, _z + Lod, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
             Cell.Density[7] = GetNeighbourDensity(_x, _y + Lod, _z + Lod, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
 
+            // Solo marcar como no exitoso si todas las densidades son exactamente 0 (caso muy raro)
+            int zeroDensities = 0;
             for (int i = 0; i < Cell.Density.Length; i++)
             {
                 if (Cell.Density[i] == 0f)
                 {
-                    Success = false;
-                    break;
+                    zeroDensities++;
                 }
             }
+            
+            // Solo fallar si más del 75% de las densidades son 0 
+            Success = zeroDensities < (Cell.Density.Length * 0.75f);
         }
 
         private void BuildCell(float x, float y, float z, GridCell Cell)
@@ -185,7 +191,35 @@ namespace Assets.Generation
             if (!bX && !bY && !bZ)
                 return _blocks[x][y][z];
 
-            return 0;
+            // En lugar de devolver 0, interpolar basado en los bloques internos cercanos
+            if (bX && !bY && !bZ)
+                return _blocks[ChunkSize - 1][y][z]; // Usar el borde del chunk actual
+            if (!bX && bY && !bZ)
+                return _blocks[x][ChunkSize - 1][z];
+            if (!bX && !bY && bZ)
+                return _blocks[x][y][ChunkSize - 1];
+
+            // Para casos complejos, usar el valor promedio de los bloques internos cercanos
+            float avgDensity = 0f;
+            int count = 0;
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    for (int dz = -1; dz <= 1; dz++)
+                    {
+                        int nx = Mathf.Clamp(x + dx, 0, ChunkSize - 1);
+                        int ny = Mathf.Clamp(y + dy, 0, ChunkSize - 1);
+                        int nz = Mathf.Clamp(z + dz, 0, ChunkSize - 1);
+                        if (nx < ChunkSize && ny < ChunkSize && nz < ChunkSize)
+                        {
+                            avgDensity += _blocks[nx][ny][nz];
+                            count++;
+                        }
+                    }
+                }
+            }
+            return count > 0 ? avgDensity / count : 1f; // Devolver 1f como valor por defecto en lugar de 0
         }
 
         public bool NeighboursExists
@@ -218,6 +252,24 @@ namespace Assets.Generation
 
                 return conditions == 7;
             }
+        }
+
+        public bool HasMinimumNeighbours()
+        {
+            // Verifica si existen al menos los vecinos básicos necesarios (menos restrictivo)
+            int conditions = 0;
+
+            Chunk RightChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, 0, 0));
+            conditions += (RightChunk != null && RightChunk.IsGenerated) ? 1 : 0;
+
+            Chunk TopChunk = _world.GetChunkByOffset(Position + new Vector3(0, ChunkSize, 0));
+            conditions += (TopChunk != null && TopChunk.IsGenerated) ? 1 : 0;
+
+            Chunk FrontChunk = _world.GetChunkByOffset(Position + new Vector3(0, 0, ChunkSize));
+            conditions += (FrontChunk != null && FrontChunk.IsGenerated) ? 1 : 0;
+
+            // Solo requiere 3 de los 7 vecinos principales para construir la malla
+            return conditions >= 2;
         }
 
         public float GetBlockAt(Vector3 v)
