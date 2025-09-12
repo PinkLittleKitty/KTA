@@ -5,65 +5,74 @@ using UnityEngine;
 
 namespace Assets.Generation
 {
-    // La clase ClosestChunk implementa IComparer<Chunk> para comparar la proximidad de los fragmentos (chunks) al jugador.
     public class ClosestChunk : IComparer<Chunk>
     {
-        // La posición del jugador que se utilizará para calcular la proximidad.
         public Vector3 PlayerPos;
 
-        // Constructor por defecto.
         public ClosestChunk()
         {
         }
 
-        // Constructor que establece la posición del jugador.
         public ClosestChunk(Vector3 pos)
         {
             PlayerPos = pos;
         }
 
-        // Método de comparación que determina la proximidad entre dos fragmentos (chunks).
         public int Compare(Chunk V1, Chunk V2)
         {
             try
             {
-                // Si ambos fragmentos son iguales, la comparación devuelve 0.
-                if (V1 == V2)
+                if (ReferenceEquals(V1, V2))
                     return 0;
 
-                // Si V1 es nulo, se considera menos cercano.
                 if (V1 == null)
                     return -1;
 
-                // Si V2 es nulo, se considera menos cercano.
                 if (V2 == null)
                     return 1;
 
-                // Calcula la distancia cuadrada entre V1 y la posición del jugador.
                 float V1f = (V1.Position - PlayerPos).sqrMagnitude;
 
-                // Calcula la distancia cuadrada entre V2 y la posición del jugador.
                 float V2f = (V2.Position - PlayerPos).sqrMagnitude;
 
-                // Compara las distancias cuadradas para determinar qué fragmento está más cerca.
-                if (V1f < V2f)
+                float difference = V1f - V2f;
+                const float epsilon = 1e-6f;
+
+                if (Mathf.Abs(difference) < epsilon)
                 {
-                    return -1; // V1 está más cerca.
+                    int hashComparison = V1.GetHashCode().CompareTo(V2.GetHashCode());
+                    if (hashComparison != 0)
+                        return hashComparison;
+                    
+                    Vector3 pos1 = V1.Position;
+                    Vector3 pos2 = V2.Position;
+                    
+                    int xComp = pos1.x.CompareTo(pos2.x);
+                    if (xComp != 0) return xComp;
+                    
+                    int yComp = pos1.y.CompareTo(pos2.y);
+                    if (yComp != 0) return yComp;
+                    
+                    return pos1.z.CompareTo(pos2.z);
                 }
-                else if (V1f == V2f)
+                else if (difference < 0)
                 {
-                    return 0; // Ambos están a la misma distancia.
+                    return -1;
                 }
                 else
                 {
-                    return 1; // V2 está más cerca.
+                    return 1;
                 }
             }
-            catch (ArgumentException e)
+            catch (Exception e)
             {
-                // En caso de error, muestra un mensaje de depuración.
-                Debug.Log("No se puede ordenar los fragmentos correctamente. " + e.Message);
-                return 0;
+                Debug.LogWarning("Error en comparación de chunks: " + e.Message);
+                
+                if (V1 == null && V2 == null) return 0;
+                if (V1 == null) return -1;
+                if (V2 == null) return 1;
+                
+                return V1.GetHashCode().CompareTo(V2.GetHashCode());
             }
         }
     }

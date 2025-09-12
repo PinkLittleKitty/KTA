@@ -7,9 +7,6 @@ using UnityEngine;
 
 namespace Assets.Generation
 {
-    /// <summary>
-    /// Clase que gestiona la cola de construcción de mallas para los fragmentos (chunks).
-    /// </summary>
     public class MeshQueue
     {
         public GameObject _player;
@@ -20,10 +17,6 @@ namespace Assets.Generation
         private ClosestChunk _closestChunkComparer = new ClosestChunk();
         private int _exceptionCount = 0;
 
-        /// <summary>
-        /// Constructor de la clase MeshQueue.
-        /// </summary>
-        /// <param name="World">El mundo en el que se está generando el terreno.</param>
         public MeshQueue(World World)
         {
             bool useThreadPool = false;
@@ -41,42 +34,55 @@ namespace Assets.Generation
             this._world = World;
         }
 
-        /// <summary>
-        /// Ordena la cola de fragmentos basada en la distancia al jugador.
-        /// </summary>
         public void Sort()
         {
-            _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * Chunk.ChunkSize * 4f;
-            Queue.Sort(_closestChunkComparer);
+            try
+            {
+                if (Queue.Count <= 1)
+                    return;
+
+                _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * Chunk.ChunkSize * 4f;
+                
+                Queue.RemoveAll(chunk => chunk == null);
+                
+                var keysToRemove = _queueDict.Keys.Where(chunk => chunk == null).ToList();
+                foreach (var key in keysToRemove)
+                {
+                    _queueDict.Remove(key);
+                }
+                
+                Queue.Sort(_closestChunkComparer);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Error al ordenar la cola de mesh: " + e.Message);
+                Debug.LogError("Stack trace: " + e.StackTrace);
+                
+                Queue.Clear();
+                _queueDict.Clear();
+            }
         }
 
-        /// <summary>
-        /// Comprueba si un fragmento está en la cola.
-        /// </summary>
-        /// <param name="ChunkToCheck">El fragmento a comprobar.</param>
-        /// <returns>True si el fragmento está en la cola, false en caso contrario.</returns>
         public bool Contains(Chunk ChunkToCheck)
         {
             lock (Queue) return _queueDict.ContainsKey(ChunkToCheck);
         }
 
-        /// <summary>
-        /// Agrega un fragmento a la cola de construcción de mallas.
-        /// </summary>
-        /// <param name="ChunkToBuild">El fragmento a agregar.</param>
         public void Add(Chunk ChunkToBuild)
         {
+            if (ChunkToBuild == null)
+                return;
+
             lock (Queue)
             {
-                _queueDict.Add(ChunkToBuild, 0);
-                Queue.Add(ChunkToBuild);
+                if (!_queueDict.ContainsKey(ChunkToBuild))
+                {
+                    _queueDict.Add(ChunkToBuild, 0);
+                    Queue.Add(ChunkToBuild);
+                }
             }
         }
 
-        /// <summary>
-        /// Elimina un fragmento de la cola de construcción de mallas.
-        /// </summary>
-        /// <param name="ChunkToBuild">El fragmento a eliminar.</param>
         public void Remove(Chunk ChunkToBuild)
         {
             lock (Queue)
@@ -87,9 +93,6 @@ namespace Assets.Generation
             }
         }
 
-        /// <summary>
-        /// Inicia el proceso de construcción de mallas de fragmentos.
-        /// </summary>
         public void Start()
         {
             try

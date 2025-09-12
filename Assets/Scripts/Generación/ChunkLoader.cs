@@ -95,7 +95,7 @@ namespace Assets.Generation
                 bool AddedNew = false;
                 for (int i = Chunks.Length - 1; i > -1; i--)
                 {
-                    if (Chunks[i].Disposed)
+                    if (Chunks[i] == null || Chunks[i].Disposed)
                     {
                         continue;
                     }
@@ -106,10 +106,16 @@ namespace Assets.Generation
                         continue;
                     }
 
-                    if (Chunks[i].ShouldBuild && Chunks[i].IsGenerated && !World.ContainsMeshQueue(Chunks[i]) && Chunks[i].HasMinimumNeighbours())
+                    if (Chunks[i].ShouldBuild && 
+                        Chunks[i].IsGenerated && 
+                        !World.ContainsMeshQueue(Chunks[i]) && 
+                        Chunks[i].HasMinimumNeighbours())
                     {
-                        World.AddToQueue(Chunks[i], true);
-                        AddedNew = true;
+                        if (!World.ContainsMeshQueue(Chunks[i]))
+                        {
+                            World.AddToQueue(Chunks[i], true);
+                            AddedNew = true;
+                        }
                     }
                 }
                 if (AddedNew)

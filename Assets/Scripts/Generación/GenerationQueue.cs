@@ -7,16 +7,14 @@ using System.Linq;
 
 namespace Assets.Generation
 {
-    // La clase GenerationQueue se encarga de gestionar una cola de generación de fragmentos (chunks).
     public class GenerationQueue
     {
-        public World _world;                // Referencia al mundo al que pertenecen los fragmentos.
-        public List<Chunk> Queue = new List<Chunk>();  // Cola de fragmentos a generar.
-        public bool Stop { get; set; }       // Indica si se debe detener la generación.
-        private ClosestChunk _closestChunkComparer = new ClosestChunk();  // Comparador de fragmentos más cercanos.
-        private int _exceptionCount = 0;     // Contador de excepciones para controlar errores.
+        public World _world;
+        public List<Chunk> Queue = new List<Chunk>();
+        public bool Stop { get; set; }
+        private ClosestChunk _closestChunkComparer = new ClosestChunk();
+        private int _exceptionCount = 0;
 
-        // Constructor de la clase GenerationQueue.
         public GenerationQueue(World World)
         {
             bool useThreadPool = false;
@@ -33,28 +31,43 @@ namespace Assets.Generation
             this._world = World;
         }
 
-        // Método para ordenar la cola de generación de fragmentos según su proximidad al jugador.
         public void Sort()
         {
-            _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * Chunk.ChunkSize * 4f;
-            Queue.Sort(_closestChunkComparer);
+            lock (Queue)
+            {
+                try
+                {
+                    if (Queue.Count <= 1)
+                        return;
+
+                    _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * Chunk.ChunkSize * 4f;
+                    
+                    Queue.RemoveAll(chunk => chunk == null);
+                    
+                    Queue.Sort(_closestChunkComparer);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError("Error al ordenar la cola de generación: " + e.Message);
+                    Debug.LogError("Stack trace: " + e.StackTrace);
+                    
+                    Queue.Clear();
+                }
+            }
         }
 
-        // Método para agregar un fragmento a la cola de generación.
         public void Add(Chunk c)
         {
             lock (Queue)
                 Queue.Add(c);
         }
 
-        // Método para eliminar un fragmento de la cola de generación.
         public void Remove(Chunk c)
         {
             lock (Queue)
                 Queue.Remove(c);
         }
 
-        // Método principal de generación de fragmentos.
         public void Start()
         {
             try
@@ -69,20 +82,45 @@ namespace Assets.Generation
                     Chunk workingChunk = null;
                     lock (Queue)
                     {
-                        workingChunk = Queue.FirstOrDefault();
-                        Queue.Remove(workingChunk);
+                        if (Queue.Count > 0)
+                        {
+                            workingChunk = Queue.FirstOrDefault();
+                            if (workingChunk != null)
+                                Queue.Remove(workingChunk);
+                        }
                     }
 
                     if (workingChunk != null)
-                        workingChunk.Generate();
+                    {
+                        try
+                        {
+                            workingChunk.Generate();
+                        }
+                        catch (Exception chunkException)
+                        {
+                            Debug.LogError($"Error generando chunk en posición {workingChunk.Position}: {chunkException.Message}");
+                        }
+                    }
+                    else
+                    {
+                        Thread.Sleep(1);
+                    }
                 }
             }
             catch (Exception e)
             {
+                _exceptionCount++;
+                Debug.LogError($"Error crítico en GenerationQueue (intento {_exceptionCount}): {e.Message}");
+                Debug.LogError("Stack trace: " + e.StackTrace);
+                
                 if (_exceptionCount >= 3)
+                {
+                    Debug.LogError("Demasiados errores en GenerationQueue. Deteniendo generación.");
                     return;
+                }
+                
+                Thread.Sleep(100);
                 new Thread(Start).Start();
-                Debug.Log(e.ToString());
             }
         }
     }

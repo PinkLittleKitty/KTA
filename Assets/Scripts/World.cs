@@ -96,10 +96,15 @@ public class World : MonoBehaviour {
 
     public void AddToQueue(Chunk Chunk, bool DoMesh)
     {
+        if (Chunk == null)
+            return;
+
         if (DoMesh) {
-            _meshQueue.Add (Chunk);
+            if (!_meshQueue.Contains(Chunk)) {
+                _meshQueue.Add(Chunk);
+            }
         } else {
-            _generationQueue.Add (Chunk);
+            _generationQueue.Add(Chunk);
         }
     }
 
@@ -142,7 +147,11 @@ public class World : MonoBehaviour {
         {
             Vector3 neighbourPos = newChunkOffset + offset;
             Chunk neighbour = GetChunkByOffset(neighbourPos);
-            if (neighbour != null && neighbour.IsGenerated && !neighbour.ShouldBuild && neighbour.HasMinimumNeighbours())
+            if (neighbour != null && 
+                neighbour.IsGenerated && 
+                !neighbour.ShouldBuild && 
+                neighbour.HasMinimumNeighbours() &&
+                !ContainsMeshQueue(neighbour))
             {
                 neighbour.ShouldBuild = true;
             }
