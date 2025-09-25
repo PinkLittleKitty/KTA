@@ -3802,8 +3802,6 @@ GameObject:
   - component: {fileID: 1036811559}
   - component: {fileID: 1036811558}
   - component: {fileID: 1036811557}
-  - component: {fileID: 1036811560}
-  - component: {fileID: 1036811561}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -3861,30 +3859,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1036811560
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1036811556}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9eda173939f941744aa860b0c2bda605, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1036811561
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1036811556}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b9f1072d7b2a29d44a765d0b98595a74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1043233011
 GameObject:
   m_ObjectHideFlags: 0
@@ -4063,7 +4037,6 @@ GameObject:
   - component: {fileID: 1079132436}
   - component: {fileID: 1079132438}
   - component: {fileID: 1079132439}
-  - component: {fileID: 1079132440}
   m_Layer: 0
   m_Name: Audio Source
   m_TagString: Untagged
@@ -4210,18 +4183,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   amplitudeHighest: 1
---- !u!114 &1079132440
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1079132435}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 84e9468d18e4cb24381fe696b5c7e9ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1079551651
 GameObject:
   m_ObjectHideFlags: 0
@@ -10249,7 +10210,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1399735948}
-  - component: {fileID: 1399735947}
   m_Layer: 0
   m_Name: PlayGames
   m_TagString: Untagged
@@ -10257,20 +10217,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1399735947
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1399735946}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c27ce4628daa1f4c8fdd5cf41d2fc57, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  GooglePlayToken: 
-  GooglePlayError: 
 --- !u!4 &1399735948
 Transform:
   m_ObjectHideFlags: 0
@@ -11538,7 +11484,6 @@ GameObject:
   - component: {fileID: 1880731489}
   - component: {fileID: 1880731488}
   - component: {fileID: 1880731491}
-  - component: {fileID: 1880731492}
   m_Layer: 0
   m_Name: World
   m_TagString: World
@@ -11595,18 +11540,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TimeControl: {fileID: 747117603}
---- !u!114 &1880731492
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1880731487}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f6d9d37eabc51684fb840f4b98389e66, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1954628641
 GameObject:
   m_ObjectHideFlags: 0
