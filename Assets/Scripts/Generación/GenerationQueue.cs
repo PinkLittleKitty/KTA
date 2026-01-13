@@ -99,6 +99,10 @@ namespace Assets.Generation
                         catch (Exception chunkException)
                         {
                             Debug.LogError($"Error generando chunk en posición {workingChunk.Position}: {chunkException.Message}");
+                            if (workingChunk != null)
+                            {
+                                ThreadManager.ExecuteOnMainThread(() => _world.RemoveChunk(workingChunk));
+                            }
                         }
                     }
                     else
@@ -112,12 +116,6 @@ namespace Assets.Generation
                 _exceptionCount++;
                 Debug.LogError($"Error crítico en GenerationQueue (intento {_exceptionCount}): {e.Message}");
                 Debug.LogError("Stack trace: " + e.StackTrace);
-                
-                if (_exceptionCount >= 3)
-                {
-                    Debug.LogError("Demasiados errores en GenerationQueue. Deteniendo generación.");
-                    return;
-                }
                 
                 Thread.Sleep(100);
                 new Thread(Start).Start();

@@ -95,9 +95,9 @@ namespace Assets.Generation
 
         public void Start()
         {
-            try
+            while (true)
             {
-                while (true)
+                try
                 {
                     if (Stop)
                         break;
@@ -118,14 +118,11 @@ namespace Assets.Generation
                     if (workingChunk != null)
                         workingChunk.Build();
                 }
-            }
-            catch (Exception e)
-            {
-                if (_exceptionCount >= 3)
-                    return;
-                new Thread(Start).Start();
-                _exceptionCount++;
-                Debug.Log(e.ToString());
+                catch (Exception e)
+                {
+                    Debug.LogError("Error en MeshQueue: " + e.Message);
+                    Debug.LogError(e.StackTrace);
+                }
             }
         }
     }
