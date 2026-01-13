@@ -327,16 +327,13 @@ namespace Assets.Rendering
 		}
 		#endregion
 
-		public static VertexData Process(double IsoLevel, GridCell Cell, bool Orientation, VertexData Data)
+		public static void Process(double IsoLevel, GridCell Cell, VertexData Data, Vector3[] vertCache)
 		{
-			return Build( Data, Polygonise(Cell, IsoLevel), Orientation);
+			Polygonise(Cell, IsoLevel, Data, vertCache);
 		}
 
-		private static Triangle[] Polygonise(GridCell Cell, double IsoLevel)
+		private static void Polygonise(GridCell Cell, double IsoLevel, VertexData Data, Vector3[] vertList)
 		{
-
-			var VertList = new Vector3[12];
-
 			byte CubeIndex = 0;
 			if (Cell.Density[0] > IsoLevel) CubeIndex |= 1;
 			if (Cell.Density[1] > IsoLevel) CubeIndex |= 2;
@@ -346,63 +343,71 @@ namespace Assets.Rendering
 			if (Cell.Density[5] > IsoLevel) CubeIndex |= 32;
 			if (Cell.Density[6] > IsoLevel) CubeIndex |= 64;
 			if (Cell.Density[7] > IsoLevel) CubeIndex |= 128;
-			//Console.WriteLine(CubeIndex +" - "+ EdgeTable[CubeIndex]);
 
 			/* Cube is entirely in/out of the surface */
 			if (EdgeTable[CubeIndex] == 0)
-				return null;
+				return;
 
 			/* Find the vertices where the surface intersects the cube */
 			if ( (EdgeTable[CubeIndex] & 1) > 0 )
-				VertList[0] = VertexInterp(IsoLevel, Cell.P[0], Cell.P[1], Cell.Density[0], Cell.Density[1]);
+				vertList[0] = VertexInterp(IsoLevel, Cell.P[0], Cell.P[1], Cell.Density[0], Cell.Density[1]);
 
 			if ( (EdgeTable[CubeIndex] & 2) > 0 )
-				VertList[1] = VertexInterp(IsoLevel, Cell.P[1], Cell.P[2], Cell.Density[1], Cell.Density[2]);
+				vertList[1] = VertexInterp(IsoLevel, Cell.P[1], Cell.P[2], Cell.Density[1], Cell.Density[2]);
 
 			if ( (EdgeTable[CubeIndex] & 4) > 0 )
-				VertList[2] = VertexInterp(IsoLevel, Cell.P[2], Cell.P[3], Cell.Density[2], Cell.Density[3]);
+				vertList[2] = VertexInterp(IsoLevel, Cell.P[2], Cell.P[3], Cell.Density[2], Cell.Density[3]);
 
 			if ( (EdgeTable[CubeIndex] & 8) > 0 )
-				VertList[3] = VertexInterp(IsoLevel, Cell.P[3], Cell.P[0], Cell.Density[3], Cell.Density[0]);
+				vertList[3] = VertexInterp(IsoLevel, Cell.P[3], Cell.P[0], Cell.Density[3], Cell.Density[0]);
 
 			if ( (EdgeTable[CubeIndex] & 16) > 0 )
-				VertList[4] = VertexInterp(IsoLevel, Cell.P[4], Cell.P[5], Cell.Density[4], Cell.Density[5]);
+				vertList[4] = VertexInterp(IsoLevel, Cell.P[4], Cell.P[5], Cell.Density[4], Cell.Density[5]);
 
 			if ( (EdgeTable[CubeIndex] & 32) > 0 )
-				VertList[5] = VertexInterp(IsoLevel, Cell.P[5], Cell.P[6], Cell.Density[5], Cell.Density[6]);
+				vertList[5] = VertexInterp(IsoLevel, Cell.P[5], Cell.P[6], Cell.Density[5], Cell.Density[6]);
 
 			if ( (EdgeTable[CubeIndex] & 64) > 0 )
-				VertList[6] = VertexInterp(IsoLevel, Cell.P[6], Cell.P[7], Cell.Density[6], Cell.Density[7]);
+				vertList[6] = VertexInterp(IsoLevel, Cell.P[6], Cell.P[7], Cell.Density[6], Cell.Density[7]);
 
 			if ( (EdgeTable[CubeIndex] & 128) > 0 )
-				VertList[7] = VertexInterp(IsoLevel, Cell.P[7], Cell.P[4], Cell.Density[7], Cell.Density[4]);
+				vertList[7] = VertexInterp(IsoLevel, Cell.P[7], Cell.P[4], Cell.Density[7], Cell.Density[4]);
 
 			if ( (EdgeTable[CubeIndex] & 256) > 0 )
-				VertList[8] = VertexInterp(IsoLevel, Cell.P[0], Cell.P[4], Cell.Density[0], Cell.Density[4]);
+				vertList[8] = VertexInterp(IsoLevel, Cell.P[0], Cell.P[4], Cell.Density[0], Cell.Density[4]);
 
 			if ( (EdgeTable[CubeIndex] & 512) > 0 )
-				VertList[9] = VertexInterp(IsoLevel, Cell.P[1], Cell.P[5], Cell.Density[1], Cell.Density[5]);
+				vertList[9] = VertexInterp(IsoLevel, Cell.P[1], Cell.P[5], Cell.Density[1], Cell.Density[5]);
 
 			if ( (EdgeTable[CubeIndex] & 1024) > 0 )
-				VertList[10] = VertexInterp(IsoLevel, Cell.P[2], Cell.P[6], Cell.Density[2], Cell.Density[6]);
+				vertList[10] = VertexInterp(IsoLevel, Cell.P[2], Cell.P[6], Cell.Density[2], Cell.Density[6]);
 
 			if ( (EdgeTable[CubeIndex] & 2048) > 0 )
-				VertList[11] = VertexInterp(IsoLevel, Cell.P[3], Cell.P[7], Cell.Density[3], Cell.Density[7]);
+				vertList[11] = VertexInterp(IsoLevel, Cell.P[3], Cell.P[7], Cell.Density[3], Cell.Density[7]);
 
 			/* Create the triangle */
-			List<Triangle> TriangleList = new List<Triangle>();
 			for (int i = 0; TriTable[CubeIndex, i] != -1; i += 3)
 			{
-				Triangle NewTri = new Triangle();
-				NewTri.P = new Vector3[3];
-				NewTri.P[0] = VertList[TriTable[CubeIndex, i + 0]];
-				NewTri.P[1] = VertList[TriTable[CubeIndex, i + 1]];
-				NewTri.P[2] = VertList[TriTable[CubeIndex, i + 2]];
+                Vector3 p0 = vertList[TriTable[CubeIndex, i + 0]];
+                Vector3 p1 = vertList[TriTable[CubeIndex, i + 1]];
+                Vector3 p2 = vertList[TriTable[CubeIndex, i + 2]];
 
-				TriangleList.Add(NewTri);
+                Data.Indices.Add(Data.Vertices.Count);
+                Data.Vertices.Add(p0);
+
+                Data.Indices.Add(Data.Vertices.Count);
+                Data.Vertices.Add(p1);
+
+                Data.Indices.Add(Data.Vertices.Count);
+                Data.Vertices.Add(p2);
+
+                Vector3 Normal = Vector3.Cross(p1 - p0, p2 - p0).normalized;
+                Data.Normals.Add(Normal);
+                Data.Normals.Add(Normal);
+                Data.Normals.Add(Normal);
 			}
-			return TriangleList.ToArray();
 		}
+
 
 		private static Vector3 VertexInterp(double IsoLevel, Vector3 P1, Vector3 P2, double valp1, double valp2)
 		{
@@ -422,48 +427,6 @@ namespace Assets.Rendering
 			else 
 				p = p1.Xyz();
 			return p;
-		}
-
-		private static VertexData Build(VertexData Data, Triangle[] Triangles, bool Orientation)
-		{
-			if(Triangles == null) return Data;
-			if(Triangles.Length == 2){ //Make it more aestically pleasing
-				if(Orientation && (Triangles[0].P[1].Xz() - Triangles[1].P[1].Xz()).sqrMagnitude == 0 && (Triangles[1].P[0].Xz() - Triangles[0].P[2].Xz()).sqrMagnitude == 0){
-					Vector3 Vertex0 = Triangles[0].P[2];
-					Vector3 Vertex1 = Triangles[0].P[1];
-					Vector3 Vertex2 = Triangles[1].P[0];
-					Vector3 Vertex3 = Triangles[0].P[0];
-
-					Triangles[0].P[0] = Triangles[1].P[2];
-					Triangles[0].P[1] = Vertex3;
-					Triangles[0].P[2] = Triangles[1].P[1];
-
-					Triangles[1].P[0] = Vertex3;
-					Triangles[1].P[1] = Triangles[1].P[2];
-					Triangles[1].P[2] = Vertex2;
-
-				}
-			}
-
-
-			for (uint i = 0; i < Triangles.Length; i++)
-			{
-				if(Triangles[i].P != null){
-					Data.Indices.Add( (int) (Data.Vertices.Count + 0));
-					Data.Indices.Add( (int) (Data.Vertices.Count + 1));
-					Data.Indices.Add( (int) (Data.Vertices.Count + 2));
-
-					Data.Vertices.Add(Triangles[i].P[0]);
-					Data.Vertices.Add(Triangles[i].P[1]);
-					Data.Vertices.Add(Triangles[i].P[2]);
-
-					Vector3 Normal = Vector3.Cross(Triangles[i].P[1] - Triangles[i].P[0], Triangles[i].P[2] - Triangles[i].P[0]).normalized;
-					Data.Normals.Add(Normal);
-					Data.Normals.Add(Normal);
-					Data.Normals.Add(Normal);
-				}     
-			}
-			return Data;
 		}
 	}
 

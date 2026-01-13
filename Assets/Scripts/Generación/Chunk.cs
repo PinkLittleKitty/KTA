@@ -16,8 +16,9 @@ namespace Assets.Generation
 
         private Mesh _mesh;
         private World _world;
-        private readonly float[][][] _blocks = new float[ChunkSize][][];
+        private readonly float[] _blocks = new float[ChunkSize * ChunkSize * ChunkSize];
         private readonly WorldGenerator _generator = new WorldGenerator();
+        private readonly Vector3[] _vertCache = new Vector3[12];
 
         void Start()
         {
@@ -43,7 +44,6 @@ namespace Assets.Generation
         public void Generate()
         {
             // Generación de los datos del chunk
-            _generator.BuildArray(_blocks, ChunkSize);
             _generator.Generate(_blocks, Position, ChunkSize);
             IsGenerated = true;
             ShouldBuild = true;
@@ -60,9 +60,7 @@ namespace Assets.Generation
             // Construcción del mesh del chunk
             ShouldBuild = false;
 
-            int WIDTH = _blocks.Length;
-            int HEIGHT = _blocks[0].Length;
-            int DEPTH = _blocks[0][0].Length;
+            int sizeSquared = ChunkSize * ChunkSize;
 
             bool Next = false;
             GridCell Cell = new GridCell();
@@ -95,7 +93,7 @@ namespace Assets.Generation
                         if (!MarchingCubes.Usable(0f, Cell))
                             continue;
 
-                        MarchingCubes.Process(0f, Cell, Next, BlockData);
+                        MarchingCubes.Process(0f, Cell, BlockData, _vertCache);
                     }
                 }
             }
@@ -193,15 +191,26 @@ namespace Assets.Generation
                 return TopChunk.GetBlockAt(x, y - HEIGHT, z);
 
             if (!bX && !bY && !bZ)
-                return _blocks[x][y][z];
+            {
+                return _blocks[x * ChunkSize * ChunkSize + y * ChunkSize + z];
+            }
 
             // En lugar de devolver 0, interpolar basado en los bloques internos cercanos
             if (bX && !bY && !bZ)
-                return _blocks[ChunkSize - 1][y][z]; // Usar el borde del chunk actual
+            {
+                int ix = ChunkSize - 1;
+                return _blocks[ix * ChunkSize * ChunkSize + y * ChunkSize + z];
+            }
             if (!bX && bY && !bZ)
-                return _blocks[x][ChunkSize - 1][z];
+            {
+                int iy = ChunkSize - 1;
+                return _blocks[x * ChunkSize * ChunkSize + iy * ChunkSize + z];
+            }
             if (!bX && !bY && bZ)
-                return _blocks[x][y][ChunkSize - 1];
+            {
+                int iz = ChunkSize - 1;
+                return _blocks[x * ChunkSize * ChunkSize + y * ChunkSize + iz];
+            }
 
             // Para casos complejos, usar el valor promedio de los bloques internos cercanos
             float avgDensity = 0f;
@@ -217,7 +226,7 @@ namespace Assets.Generation
                         int nz = Mathf.Clamp(z + dz, 0, ChunkSize - 1);
                         if (nx < ChunkSize && ny < ChunkSize && nz < ChunkSize)
                         {
-                            avgDensity += _blocks[nx][ny][nz];
+                            avgDensity += _blocks[nx * ChunkSize * ChunkSize + ny * ChunkSize + nz];
                             count++;
                         }
                     }
@@ -284,7 +293,7 @@ namespace Assets.Generation
         public float GetBlockAt(int x, int y, int z)
         {
             if (IsGenerated)
-                return _blocks[x][y][z];
+                return _blocks[x * ChunkSize * ChunkSize + y * ChunkSize + z];
             else
                 return 0;
         }

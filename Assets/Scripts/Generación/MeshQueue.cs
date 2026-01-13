@@ -43,9 +43,9 @@ namespace Assets.Generation
 
                 _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * Chunk.ChunkSize * 4f;
                 
-                Queue.RemoveAll(chunk => chunk == null);
+                Queue.RemoveAll(chunk => ReferenceEquals(chunk, null));
                 
-                var keysToRemove = _queueDict.Keys.Where(chunk => chunk == null).ToList();
+                var keysToRemove = _queueDict.Keys.Where(chunk => ReferenceEquals(chunk, null)).ToList();
                 foreach (var key in keysToRemove)
                 {
                     _queueDict.Remove(key);
@@ -97,6 +97,7 @@ namespace Assets.Generation
         {
             while (true)
             {
+                Chunk workingChunk = null;
                 try
                 {
                     if (Stop)
@@ -105,7 +106,6 @@ namespace Assets.Generation
                     Thread.Sleep(5);
                     _world.MeshQueue = Queue.Count;
 
-                    Chunk workingChunk = null;
                     lock (Queue)
                     {
                         Sort();
@@ -122,6 +122,11 @@ namespace Assets.Generation
                 {
                     Debug.LogError("Error en MeshQueue: " + e.Message);
                     Debug.LogError(e.StackTrace);
+                    
+                    if (workingChunk != null)
+                    {
+                        ThreadManager.ExecuteOnMainThread(() => _world.RemoveChunk(workingChunk));
+                    }
                 }
             }
         }

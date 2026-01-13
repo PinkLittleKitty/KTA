@@ -8,23 +8,11 @@ namespace Assets.Generation
         public const float SpawnRadius = 64f;
         public static Vector3 SpawnPosition = Vector3.forward * 32f;
 
-        public void BuildArray(float[][][] densities, int chunkSize)
-        {
-            for (int x = 0; x < chunkSize; x++)
-            {
-                densities[x] = new float[chunkSize][];
-
-                for (int y = 0; y < chunkSize; y++)
-                {
-                    densities[x][y] = new float[chunkSize];
-                }
-            }
-        }
-
-        public void Generate(float[][][] densities, Vector3 offsets, int chunkSize)
+        public void Generate(float[] densities, Vector3 offsets, int chunkSize)
         {
             float scale = 0.025f, amplitude = 64f;
             int lerp = 4;
+            int sizeSquared = chunkSize * chunkSize;
 
             for (int x = 0; x < chunkSize; x++)
             {
@@ -40,10 +28,14 @@ namespace Assets.Generation
                     {
                         float prev = values[(int)(z / lerp)];
                         float next = values[(int)Mathf.Min(z / lerp + 1, values.Length - 1)];
-                        densities[x][y][z] = Mathf.Lerp(prev, next, (float)(z / (float)lerp));
+                        float density = Mathf.Lerp(prev, next, (float)(z % lerp) / lerp);
 
-                        // Make a sphere on spawn point
-                        densities[x][y][z] = ((SpawnPosition - new Vector3(x + offsets.x, y + offsets.y, z + offsets.z)).sqrMagnitude < SpawnRadius * SpawnRadius) ? 0 : densities[x][y][z];
+                        if ((SpawnPosition - new Vector3(x + offsets.x, y + offsets.y, z + offsets.z)).sqrMagnitude < SpawnRadius * SpawnRadius)
+                        {
+                            density = 0;
+                        }
+
+                        densities[x * sizeSquared + y * chunkSize + z] = density;
                     }
                 }
             }

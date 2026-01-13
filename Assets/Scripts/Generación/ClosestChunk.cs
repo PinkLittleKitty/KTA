@@ -25,10 +25,10 @@ namespace Assets.Generation
                 if (ReferenceEquals(V1, V2))
                     return 0;
 
-                if (V1 == null)
+                if (ReferenceEquals(V1, null))
                     return -1;
 
-                if (V2 == null)
+                if (ReferenceEquals(V2, null))
                     return 1;
 
                 float V1f = (V1.Position - PlayerPos).sqrMagnitude;
@@ -68,9 +68,9 @@ namespace Assets.Generation
             {
                 Debug.LogWarning("Error en comparación de chunks: " + e.Message);
                 
-                if (V1 == null && V2 == null) return 0;
-                if (V1 == null) return -1;
-                if (V2 == null) return 1;
+                if (ReferenceEquals(V1, null) && ReferenceEquals(V2, null)) return 0;
+                if (ReferenceEquals(V1, null)) return -1;
+                if (ReferenceEquals(V2, null)) return 1;
                 
                 return V1.GetHashCode().CompareTo(V2.GetHashCode());
             }
