@@ -108,7 +108,11 @@ namespace Assets.Generation
                     _mesh.SetVertices(BlockData.Vertices);
                     _mesh.SetNormals(BlockData.Normals);
                     _mesh.SetIndices(BlockData.Indices.ToArray(), MeshTopology.Triangles, 0);
-                    GetComponent<MeshCollider>().sharedMesh = _mesh;
+                    
+                    if (_mesh.vertexCount > 0)
+                        GetComponent<MeshCollider>().sharedMesh = _mesh;
+                    else
+                        GetComponent<MeshCollider>().sharedMesh = null;
                 }
             });
         }

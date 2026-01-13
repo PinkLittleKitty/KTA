@@ -51,6 +51,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "KTA.sln",
+    "dotnet.defaultSolution": "KTA.slnx",
     "kiroAgent.configureMCP": "Disabled"
 }
