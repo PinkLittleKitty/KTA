@@ -37,11 +37,7 @@ public class TimeControl : MonoBehaviour
 
     public GameObject playerPrefab;
 
-    public GameObject playerPrefabLeft;
 
-    public GameObject playerPrefabRight;
-
-    public GameObject playerPrefabGyro;
 
     public GameObject joystick;
     public GameObject TutorialGO;
@@ -188,7 +184,6 @@ public class TimeControl : MonoBehaviour
         
         optionsButton.gameObject.SetActive(false);
         
-        wichGameobject();
         GameObject debris = new GameObject("Debris");
         debris.tag = "Debris";
         
@@ -208,8 +203,10 @@ public class TimeControl : MonoBehaviour
         }
         
         GameObject go = Instantiate<GameObject>(playerPrefab, Vector3.zero, Quaternion.identity);
-        
+
         world.Player = go;
+
+        UpdateControlUI();
         
         movement = go.GetComponentInChildren<Movement>();
         
@@ -310,6 +307,29 @@ public class TimeControl : MonoBehaviour
         }
 
         PlayerPrefs.Save();
+        
+        if (TutorialGO == null)
+            TutorialGO = GameObject.FindGameObjectWithTag("OwO");
+
+        if (TutorialGO != null)
+        {
+            bool shouldShow = !isLost && 
+                              !movement.IsInSpawn && 
+                              !isUsing && 
+                              energyLeft > 20 && 
+                              score < 200;
+
+            if (shouldShow)
+            {
+                if (!TutorialGO.activeSelf) TutorialGO.SetActive(true);
+                float pulse = 1f + Mathf.Sin(Time.time * 8f) * 0.15f;
+                TutorialGO.transform.localScale = Vector3.one * pulse;
+            }
+            else
+            {
+                if (TutorialGO.activeSelf) TutorialGO.SetActive(false);
+            }
+        }
     }
 
     public void InvertControls()
@@ -322,20 +342,43 @@ public class TimeControl : MonoBehaviour
         return new Vector2(Mathf.Lerp(a.x, b.x, d), Mathf.Lerp(b.x, b.y, d));
     }
 
-     public void wichGameobject()
+    public void UpdateControlUI()
     {
+        joystick = GameObject.FindGameObjectWithTag("Joystick");
+
+        if (joystick == null) return;
+
         int controlType = PlayerPrefs.GetInt("Control");
-        if (controlType == 1)
+
+        RectTransform rect = joystick.GetComponent<RectTransform>();
+
+        if (controlType == 1) 
         {
-            playerPrefab = playerPrefabLeft;
+            joystick.SetActive(true);
+            rect.anchorMin = new Vector2(0, 0);
+            rect.anchorMax = new Vector2(0, 0);
+            rect.pivot = new Vector2(0, 0);
+            rect.anchoredPosition = new Vector2(100, 100);
         }
         else if (controlType == 2)
         {
-            playerPrefab = playerPrefabRight;
+            joystick.SetActive(true);
+            rect.anchorMin = new Vector2(1, 0);
+            rect.anchorMax = new Vector2(1, 0);
+            rect.pivot = new Vector2(1, 0);
+            rect.anchoredPosition = new Vector2(-100, 100);
         }
         else if (controlType == 3)
         {
-            playerPrefab = playerPrefabGyro;
+            joystick.SetActive(false);
+        }
+        else
+        {
+            joystick.SetActive(true);
+            rect.anchorMin = new Vector2(0, 0);
+            rect.anchorMax = new Vector2(0, 0);
+            rect.pivot = new Vector2(0, 0);
+            rect.anchoredPosition = new Vector2(100, 100);
         }
     }
 }
