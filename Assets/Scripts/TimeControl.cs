@@ -41,6 +41,7 @@ public class TimeControl : MonoBehaviour
 
     public GameObject joystick;
     public GameObject TutorialGO;
+    private GameObject TutorialClone;
 
     public AudioSource sound;
 
@@ -309,7 +310,10 @@ public class TimeControl : MonoBehaviour
         PlayerPrefs.Save();
         
         if (TutorialGO == null)
+        {
             TutorialGO = GameObject.FindGameObjectWithTag("OwO");
+            if (TutorialGO != null) UpdateControlUI();
+        }
 
         if (TutorialGO != null)
         {
@@ -321,13 +325,21 @@ public class TimeControl : MonoBehaviour
 
             if (shouldShow)
             {
-                if (!TutorialGO.activeSelf) TutorialGO.SetActive(true);
                 float pulse = 1f + Mathf.Sin(Time.time * 8f) * 0.15f;
+
+                if (!TutorialGO.activeSelf) TutorialGO.SetActive(true);
                 TutorialGO.transform.localScale = Vector3.one * pulse;
+
+                if (TutorialClone != null)
+                {
+                    if (!TutorialClone.activeSelf) TutorialClone.SetActive(true);
+                    TutorialClone.transform.localScale = Vector3.one * pulse;
+                }
             }
             else
             {
                 if (TutorialGO.activeSelf) TutorialGO.SetActive(false);
+                if (TutorialClone != null && TutorialClone.activeSelf) TutorialClone.SetActive(false);
             }
         }
     }
@@ -345,20 +357,45 @@ public class TimeControl : MonoBehaviour
     public void UpdateControlUI()
     {
         joystick = GameObject.FindGameObjectWithTag("Joystick");
+        
+        if (TutorialGO == null)
+            TutorialGO = GameObject.FindGameObjectWithTag("OwO");
 
         if (joystick == null) return;
 
         int controlType = PlayerPrefs.GetInt("Control");
 
         RectTransform rect = joystick.GetComponent<RectTransform>();
+        RectTransform tutRect = TutorialGO != null ? TutorialGO.GetComponent<RectTransform>() : null;
 
-        if (controlType == 1) 
+        if (tutRect != null)
+        {
+            if (tutRect.parent == joystick.transform)
+                tutRect.SetParent(joystick.transform.parent, false);
+        }
+
+        if (controlType == 1 || controlType == 0)
         {
             joystick.SetActive(true);
             rect.anchorMin = new Vector2(0, 0);
             rect.anchorMax = new Vector2(0, 0);
             rect.pivot = new Vector2(0, 0);
             rect.anchoredPosition = new Vector2(100, 100);
+
+            if (tutRect != null)
+            {
+                tutRect.gameObject.SetActive(true);
+                tutRect.anchorMin = new Vector2(0, 0);
+                tutRect.anchorMax = new Vector2(0, 0);
+                tutRect.pivot = new Vector2(0, 0);
+                tutRect.anchoredPosition = new Vector2(1766, 150);
+                
+                tutRect.anchorMin = new Vector2(1, 0);
+                tutRect.anchorMax = new Vector2(1, 0);
+                tutRect.pivot = new Vector2(1, 0);
+                tutRect.anchoredPosition = new Vector2(-766, 150);
+            }
+            if (TutorialClone != null) TutorialClone.SetActive(false);
         }
         else if (controlType == 2)
         {
@@ -367,18 +404,43 @@ public class TimeControl : MonoBehaviour
             rect.anchorMax = new Vector2(1, 0);
             rect.pivot = new Vector2(1, 0);
             rect.anchoredPosition = new Vector2(-100, 100);
+
+            if (tutRect != null)
+            {
+                tutRect.gameObject.SetActive(true);
+                tutRect.anchorMin = new Vector2(0, 0);
+                tutRect.anchorMax = new Vector2(0, 0);
+                tutRect.pivot = new Vector2(0, 0);
+                tutRect.anchoredPosition = new Vector2(766, 150);
+            }
+            if (TutorialClone != null) TutorialClone.SetActive(false);
         }
         else if (controlType == 3)
         {
             joystick.SetActive(false);
-        }
-        else
-        {
-            joystick.SetActive(true);
-            rect.anchorMin = new Vector2(0, 0);
-            rect.anchorMax = new Vector2(0, 0);
-            rect.pivot = new Vector2(0, 0);
-            rect.anchoredPosition = new Vector2(100, 100);
+            if (tutRect != null)
+            {
+                tutRect.gameObject.SetActive(true);
+                tutRect.anchorMin = new Vector2(1, 0);
+                tutRect.anchorMax = new Vector2(1, 0);
+                tutRect.pivot = new Vector2(1, 0);
+                tutRect.anchoredPosition = new Vector2(-766, 150);
+            }
+
+            if (TutorialGO != null)
+            {
+                if (TutorialClone == null)
+                {
+                    TutorialClone = Instantiate(TutorialGO, TutorialGO.transform.parent);
+                }
+                
+                TutorialClone.SetActive(true);
+                RectTransform cloneRect = TutorialClone.GetComponent<RectTransform>();
+                cloneRect.anchorMin = new Vector2(0, 0);
+                cloneRect.anchorMax = new Vector2(0, 0);
+                cloneRect.pivot = new Vector2(0, 0);
+                cloneRect.anchoredPosition = new Vector2(766, 150);
+            }
         }
     }
 }
