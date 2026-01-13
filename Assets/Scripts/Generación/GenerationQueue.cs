@@ -62,6 +62,11 @@ namespace Assets.Generation
                 Queue.Add(c);
         }
 
+        public bool Contains(Chunk c)
+        {
+            lock (Queue) return Queue.Contains(c);
+        }
+
         public void Remove(Chunk c)
         {
             lock (Queue)

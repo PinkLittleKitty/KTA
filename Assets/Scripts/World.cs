@@ -70,11 +70,24 @@ public class World : MonoBehaviour {
                     
                     if (chunk != null && chunk.IsGenerated && !chunk.ShouldBuild && chunk.HasMinimumNeighbours())
                     {
-                        if (!ContainsMeshQueue(chunk))
+                        bool hasMesh = false;
+                        var collider = chunk.GetComponent<MeshCollider>();
+                        if (collider != null && collider.sharedMesh != null && collider.sharedMesh.vertexCount > 0)
+                            hasMesh = true;
+
+                        if (!hasMesh && !ContainsMeshQueue(chunk))
                         {
                             chunk.ShouldBuild = true;
                             AddToQueue(chunk, true);
                         }
+                    }
+
+                    if (chunk != null && !chunk.IsGenerated)
+                    {
+                         if (!ContainsGenerationQueue(chunk))
+                         {
+                             AddToQueue(chunk, false);
+                         }
                     }
                 }
             }
@@ -104,7 +117,9 @@ public class World : MonoBehaviour {
                 _meshQueue.Add(Chunk);
             }
         } else {
-            _generationQueue.Add(Chunk);
+            if (!_generationQueue.Contains(Chunk)) {
+                _generationQueue.Add(Chunk);
+            }
         }
     }
 
@@ -168,9 +183,12 @@ public class World : MonoBehaviour {
         }
         Chunk.Dispose ();
     }
-
     public bool ContainsMeshQueue(Chunk chunk){
         return _meshQueue.Contains(chunk);
+    }
+    
+    public bool ContainsGenerationQueue(Chunk chunk){
+        return _generationQueue.Contains(chunk); 
     }
 
     public Vector3 ToBlockSpace(Vector3 Vec3){
