@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using System;
-using System.Linq;
 
 namespace Assets.Generation
 {
@@ -11,24 +10,42 @@ namespace Assets.Generation
     {
         public World _world;
         public List<Chunk> Queue = new List<Chunk>();
-        public bool Stop { get; set; }
+        private readonly HashSet<Chunk> _queueSet = new HashSet<Chunk>();
+        private readonly AutoResetEvent _workSignal = new AutoResetEvent(false);
+        private readonly Thread[] _workers;
+        private volatile bool _stop;
+
+        public bool Stop
+        {
+            get => _stop;
+            set
+            {
+                _stop = value;
+                if (value)
+                {
+                    _workSignal.Set();
+                }
+            }
+        }
+
         private ClosestChunk _closestChunkComparer = new ClosestChunk();
-        private int _exceptionCount = 0;
 
         public GenerationQueue(World World)
         {
-            bool useThreadPool = false;
-
-            if (useThreadPool)
-            {
-                ThreadPool.QueueUserWorkItem(new WaitCallback(delegate (object state)
-                { Start(); }));
-            }
-            else
-            {
-                new Thread(Start).Start();
-            }
             this._world = World;
+
+            int workerCount = Mathf.Clamp(SystemInfo.processorCount / 2, 2, 4);
+            _workers = new Thread[workerCount];
+
+            for (int i = 0; i < workerCount; i++)
+            {
+                _workers[i] = new Thread(Start)
+                {
+                    IsBackground = true,
+                    Name = $"GenerationQueueWorker_{i}"
+                };
+                _workers[i].Start();
+            }
         }
 
         public void Sort()
@@ -40,9 +57,10 @@ namespace Assets.Generation
                     if (Queue.Count <= 1)
                         return;
 
-                    _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * Chunk.ChunkSize * 4f;
+                    _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * (Chunk.ChunkSize * 4f);
                     
-                    Queue.RemoveAll(chunk => chunk == null);
+                    Queue.RemoveAll(chunk => chunk == null || chunk.Disposed);
+                    _queueSet.RemoveWhere(chunk => chunk == null || chunk.Disposed);
                     
                     Queue.Sort(_closestChunkComparer);
                 }
@@ -52,78 +70,91 @@ namespace Assets.Generation
                     Debug.LogError("Stack trace: " + e.StackTrace);
                     
                     Queue.Clear();
+                    _queueSet.Clear();
                 }
             }
         }
 
         public void Add(Chunk c)
         {
+            if (c == null || c.Disposed)
+                return;
+
             lock (Queue)
-                Queue.Add(c);
+            {
+                if (_queueSet.Add(c))
+                {
+                    Queue.Add(c);
+                }
+            }
+            _workSignal.Set();
         }
 
         public bool Contains(Chunk c)
         {
-            lock (Queue) return Queue.Contains(c);
+            if (c == null) return false;
+            lock (Queue) return _queueSet.Contains(c);
         }
 
         public void Remove(Chunk c)
         {
+            if (c == null)
+                return;
+
             lock (Queue)
+            {
                 Queue.Remove(c);
+                _queueSet.Remove(c);
+            }
         }
 
         public void Start()
         {
-            try
+            while (!_stop)
             {
-                while (true)
+                Chunk workingChunk = null;
+                try
                 {
-                    if (Stop)
-                        break;
-
-                    _world.GenQueue = Queue.Count;
-
-                    Chunk workingChunk = null;
                     lock (Queue)
                     {
+                        _world.GenQueue = Queue.Count;
+
                         if (Queue.Count > 0)
                         {
-                            workingChunk = Queue.FirstOrDefault();
+                            workingChunk = Queue[0];
+                            Queue.RemoveAt(0);
                             if (workingChunk != null)
-                                Queue.Remove(workingChunk);
+                                _queueSet.Remove(workingChunk);
+
+                            if (Queue.Count > 0)
+                                _workSignal.Set();
                         }
                     }
 
                     if (workingChunk != null && !workingChunk.Disposed)
                     {
-                        try
+                        workingChunk.Generate();
+                    }
+                    else
+                    {
+                        _workSignal.WaitOne(10);
+                    }
+                }
+                catch (Exception chunkException)
+                {
+                    if (workingChunk != null)
+                    {
+                        Debug.LogError($"Error generando chunk en posición {workingChunk.Position}: {chunkException.Message}\n{chunkException.StackTrace}");
+                        if (!workingChunk.Disposed)
                         {
-                            workingChunk.Generate();
-                        }
-                        catch (Exception chunkException)
-                        {
-                            Debug.LogError($"Error generando chunk en posición {workingChunk.Position}: {chunkException.Message}\n{chunkException.StackTrace}");
-                            if (workingChunk != null && !workingChunk.Disposed)
-                            {
-                                ThreadManager.ExecuteOnMainThread(() => _world.RemoveChunk(workingChunk));
-                            }
+                            ThreadManager.ExecuteOnMainThread(() => _world.RemoveChunk(workingChunk));
                         }
                     }
                     else
                     {
-                        Thread.Sleep(1);
+                        Debug.LogError($"Error en GenerationQueue: {chunkException.Message}\n{chunkException.StackTrace}");
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                _exceptionCount++;
-                Debug.LogError($"Error crítico en GenerationQueue (intento {_exceptionCount}): {e.Message}");
-                Debug.LogError("Stack trace: " + e.StackTrace);
-                
-                Thread.Sleep(100);
-                new Thread(Start).Start();
             }
         }
     }
