@@ -131,11 +131,11 @@ public class Movement : MonoBehaviour
         }
 
         if (Options.Invert)
-            transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.right * Time.deltaTime * 64f * TurnSpeed * scale * vAxis);
+            transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.right * Time.deltaTime * TurnSpeed * scale * vAxis);
         else
-            transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.right * Time.deltaTime * 64f * TurnSpeed * scale * -vAxis);
-        transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.forward * Time.deltaTime * 64f * TurnSpeed * scale * -hAxis);
-        transform.parent.Rotate(-Vector3.up * Time.deltaTime * 64f * TurnSpeed * scale * -hAxis);
+            transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.right * Time.deltaTime * TurnSpeed * scale * -vAxis);
+        transform.localRotation = Quaternion.Euler(transform.localRotation.eulerAngles + Vector3.forward * Time.deltaTime * TurnSpeed * scale * -hAxis);
+        transform.parent.Rotate(-Vector3.up * Time.deltaTime * TurnSpeed * scale * -hAxis);
     }
 
     void StartTrail(ref TrailRenderer Trail, Vector3 Position)

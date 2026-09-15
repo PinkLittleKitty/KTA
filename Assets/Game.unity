@@ -9878,10 +9878,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: K-TA
+  m_text: KTA
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 04157948fea4f284aa5be41fcfb88ab9, type: 2}
-  m_sharedMaterial: {fileID: 1323086233455164, guid: 04157948fea4f284aa5be41fcfb88ab9,
+  m_fontAsset: {fileID: 11400000, guid: 2dac5b1d2f83180b7895686021396676, type: 2}
+  m_sharedMaterial: {fileID: 211746348197763638, guid: 2dac5b1d2f83180b7895686021396676,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
