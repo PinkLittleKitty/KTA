@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -82,44 +83,37 @@ namespace Assets.Generation
 
         private IEnumerator ManageChunksMesh()
         {
+            var wait = new WaitForSeconds(0.25f);
+            var toRemove = new List<Chunk>();
+
             while (true)
             {
                 if (Stop) break;
 
-                yield return null;
+                yield return wait;
 
-                Chunk[] Chunks;
+                float maxRadius = World.ChunkLoaderRadius * 0.5f * Chunk.ChunkSize;
+                float maxDistSqr = maxRadius * maxRadius;
+
+                toRemove.Clear();
                 lock (World.Chunks)
-                    Chunks = World.Chunks.Values.ToList().ToArray();
-
-                bool AddedNew = false;
-                for (int i = Chunks.Length - 1; i > -1; i--)
                 {
-                    if (Chunks[i] == null || Chunks[i].Disposed)
+                    foreach (var chunk in World.Chunks.Values)
                     {
-                        continue;
-                    }
+                        if (chunk == null || chunk.Disposed)
+                            continue;
 
-                    if ((Chunks[i].Position - _playerPosition).sqrMagnitude > (World.ChunkLoaderRadius) * .5f * Chunk.ChunkSize * (World.ChunkLoaderRadius) * Chunk.ChunkSize * .5f)
-                    {
-                        World.RemoveChunk(Chunks[i]);
-                        continue;
-                    }
-
-                    if (Chunks[i].ShouldBuild && 
-                        Chunks[i].IsGenerated && 
-                        !World.ContainsMeshQueue(Chunks[i]) && 
-                        Chunks[i].HasMinimumNeighbours())
-                    {
-                        if (!World.ContainsMeshQueue(Chunks[i]))
+                        if ((chunk.Position - _playerPosition).sqrMagnitude > maxDistSqr)
                         {
-                            World.AddToQueue(Chunks[i], true);
-                            AddedNew = true;
+                            toRemove.Add(chunk);
                         }
                     }
                 }
-                if (AddedNew)
-                    World.SortMeshQueue();
+
+                for (int i = 0; i < toRemove.Count; i++)
+                {
+                    World.RemoveChunk(toRemove[i]);
+                }
             }
         }
     }

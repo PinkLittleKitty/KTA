@@ -15,7 +15,6 @@ namespace Assets.Generation
         public bool Stop { get; set; }
         private World _world;
         private ClosestChunk _closestChunkComparer = new ClosestChunk();
-        private int _exceptionCount = 0;
 
         public MeshQueue(World World)
         {

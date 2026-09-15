@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using Assets.Generation;
 using UnityEngine;
@@ -47,51 +47,6 @@ public class World : MonoBehaviour {
         MeshQueue = _meshCount;
 
         ChunkLoaderRadius = (int)sliderUI.value;
-
-        if (Time.frameCount % 60 == 0)
-        {
-            CheckAndRepairGaps();
-        }
-    }
-
-    private void CheckAndRepairGaps()
-    {
-        Vector3 playerChunkPos = ToChunkSpace(PlayerPosition);
-        int checkRadius = Mathf.Min(ChunkLoaderRadius / 2, 4);
-        
-        for (int x = -checkRadius; x <= checkRadius; x++)
-        {
-            for (int z = -checkRadius; z <= checkRadius; z++)
-            {
-                for (int y = -checkRadius; y <= checkRadius; y++)
-                {
-                    Vector3 chunkOffset = playerChunkPos + new Vector3(x * Chunk.ChunkSize, y * Chunk.ChunkSize, z * Chunk.ChunkSize);
-                    Chunk chunk = GetChunkByOffset(chunkOffset);
-                    
-                    if (chunk != null && chunk.IsGenerated && !chunk.ShouldBuild && chunk.HasMinimumNeighbours())
-                    {
-                        bool hasMesh = false;
-                        var collider = chunk.GetComponent<MeshCollider>();
-                        if (collider != null && collider.sharedMesh != null && collider.sharedMesh.vertexCount > 0)
-                            hasMesh = true;
-
-                        if (!hasMesh && !ContainsMeshQueue(chunk))
-                        {
-                            chunk.ShouldBuild = true;
-                            AddToQueue(chunk, true);
-                        }
-                    }
-
-                    if (chunk != null && !chunk.IsGenerated)
-                    {
-                         if (!ContainsGenerationQueue(chunk))
-                         {
-                             AddToQueue(chunk, false);
-                         }
-                    }
-                }
-            }
-        }
     }
 
     void OnApplicationQuit(){
@@ -129,46 +84,6 @@ public class World : MonoBehaviour {
             if (!this.Chunks.ContainsKey (Offset)) {
                 this.Chunks.Add (Offset, Chunk);
                 this._generationQueue.Add (Chunk);
-
-                NotifyNeighboursOfNewChunk(Offset);
-            }
-        }
-    }
-
-    private void NotifyNeighboursOfNewChunk(Vector3 newChunkOffset)
-    {
-        Vector3[] neighbourOffsets = {
-            new Vector3(-Chunk.ChunkSize, 0, 0),
-            new Vector3(Chunk.ChunkSize, 0, 0),
-            new Vector3(0, -Chunk.ChunkSize, 0),
-            new Vector3(0, Chunk.ChunkSize, 0),
-            new Vector3(0, 0, -Chunk.ChunkSize),
-            new Vector3(0, 0, Chunk.ChunkSize),
-            new Vector3(-Chunk.ChunkSize, 0, -Chunk.ChunkSize),
-            new Vector3(-Chunk.ChunkSize, 0, Chunk.ChunkSize),
-            new Vector3(Chunk.ChunkSize, 0, -Chunk.ChunkSize),
-            new Vector3(Chunk.ChunkSize, 0, Chunk.ChunkSize),
-            new Vector3(-Chunk.ChunkSize, -Chunk.ChunkSize, 0),
-            new Vector3(-Chunk.ChunkSize, Chunk.ChunkSize, 0),
-            new Vector3(Chunk.ChunkSize, -Chunk.ChunkSize, 0),
-            new Vector3(Chunk.ChunkSize, Chunk.ChunkSize, 0),
-            new Vector3(0, -Chunk.ChunkSize, -Chunk.ChunkSize),
-            new Vector3(0, -Chunk.ChunkSize, Chunk.ChunkSize),
-            new Vector3(0, Chunk.ChunkSize, -Chunk.ChunkSize),
-            new Vector3(0, Chunk.ChunkSize, Chunk.ChunkSize)
-        };
-
-        foreach (Vector3 offset in neighbourOffsets)
-        {
-            Vector3 neighbourPos = newChunkOffset + offset;
-            Chunk neighbour = GetChunkByOffset(neighbourPos);
-            if (neighbour != null && 
-                neighbour.IsGenerated && 
-                !neighbour.ShouldBuild && 
-                neighbour.HasMinimumNeighbours() &&
-                !ContainsMeshQueue(neighbour))
-            {
-                neighbour.ShouldBuild = true;
             }
         }
     }
