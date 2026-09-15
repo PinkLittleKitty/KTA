@@ -118,7 +118,7 @@ namespace Assets.Generation
                             _queueDict.Remove(workingChunk);
                     }
 
-                    if (workingChunk != null)
+                    if (workingChunk != null && !workingChunk.Disposed)
                         workingChunk.Build();
                 }
                 catch (Exception e)
@@ -126,7 +126,7 @@ namespace Assets.Generation
                     Debug.LogError("Error en MeshQueue: " + e.Message);
                     Debug.LogError(e.StackTrace);
                     
-                    if (workingChunk != null)
+                    if (workingChunk != null && !workingChunk.Disposed)
                     {
                         ThreadManager.ExecuteOnMainThread(() => _world.RemoveChunk(workingChunk));
                     }

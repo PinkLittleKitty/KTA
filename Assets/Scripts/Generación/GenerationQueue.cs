@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
@@ -82,7 +82,7 @@ namespace Assets.Generation
                     if (Stop)
                         break;
 
-                    _world.MeshQueue = Queue.Count;
+                    _world.GenQueue = Queue.Count;
 
                     Chunk workingChunk = null;
                     lock (Queue)
@@ -95,7 +95,7 @@ namespace Assets.Generation
                         }
                     }
 
-                    if (workingChunk != null)
+                    if (workingChunk != null && !workingChunk.Disposed)
                     {
                         try
                         {
@@ -103,8 +103,8 @@ namespace Assets.Generation
                         }
                         catch (Exception chunkException)
                         {
-                            Debug.LogError($"Error generando chunk en posición {workingChunk.Position}: {chunkException.Message}");
-                            if (workingChunk != null)
+                            Debug.LogError($"Error generando chunk en posición {workingChunk.Position}: {chunkException.Message}\n{chunkException.StackTrace}");
+                            if (workingChunk != null && !workingChunk.Disposed)
                             {
                                 ThreadManager.ExecuteOnMainThread(() => _world.RemoveChunk(workingChunk));
                             }

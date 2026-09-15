@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace Assets.Generation
@@ -8,34 +8,68 @@ namespace Assets.Generation
         public const float SpawnRadius = 64f;
         public static Vector3 SpawnPosition = Vector3.forward * 32f;
 
+        private float[] _sampleBuffer;
+
         public void Generate(float[] densities, Vector3 offsets, int chunkSize)
         {
             float scale = 0.025f, amplitude = 64f;
             int lerp = 4;
-            int sizeSquared = chunkSize * chunkSize;
+            int pointsPerAxis = chunkSize + 1;
+            int sliceSize = pointsPerAxis * pointsPerAxis;
 
-            for (int x = 0; x < chunkSize; x++)
+            int sampleCount = (chunkSize / lerp) + 1;
+            if (_sampleBuffer == null || _sampleBuffer.Length < sampleCount)
             {
-                for (int y = 0; y < chunkSize; y++)
+                _sampleBuffer = new float[sampleCount];
+            }
+
+            float spawnRadiusSqr = SpawnRadius * SpawnRadius;
+
+            for (int x = 0; x <= chunkSize; x++)
+            {
+                float worldX = x + offsets.x;
+                float dx = SpawnPosition.x - worldX;
+                float dxSqr = dx * dx;
+
+                for (int y = 0; y <= chunkSize; y++)
                 {
-                    float[] values = new float[chunkSize / lerp];
-                    for (int i = 0; i < values.Length; i++)
+                    float worldY = y + offsets.y;
+                    float dy = SpawnPosition.y - worldY;
+                    float dxySqr = dxSqr + dy * dy;
+
+                    for (int i = 0; i < sampleCount; i++)
                     {
-                        values[i] = (float)OpenSimplexNoise.Evaluate((x + offsets.x) * scale, (y + offsets.y) * scale, (i * lerp + offsets.z) * scale) * amplitude;
+                        float worldZ = (i * lerp) + offsets.z;
+                        _sampleBuffer[i] = (float)OpenSimplexNoise.Evaluate(worldX * scale, worldY * scale, worldZ * scale) * amplitude;
                     }
 
-                    for (int z = 0; z < chunkSize; z++)
-                    {
-                        float prev = values[(int)(z / lerp)];
-                        float next = values[(int)Mathf.Min(z / lerp + 1, values.Length - 1)];
-                        float density = Mathf.Lerp(prev, next, (float)(z % lerp) / lerp);
+                    int xSlicePlusYRow = x * sliceSize + y * pointsPerAxis;
 
-                        if ((SpawnPosition - new Vector3(x + offsets.x, y + offsets.y, z + offsets.z)).sqrMagnitude < SpawnRadius * SpawnRadius)
+                    for (int z = 0; z <= chunkSize; z++)
+                    {
+                        int sampleIdx = z / lerp;
+                        int remainder = z % lerp;
+
+                        float density;
+                        if (remainder == 0)
+                        {
+                            density = _sampleBuffer[sampleIdx];
+                        }
+                        else
+                        {
+                            float prev = _sampleBuffer[sampleIdx];
+                            float next = _sampleBuffer[sampleIdx + 1];
+                            density = Mathf.Lerp(prev, next, (float)remainder / lerp);
+                        }
+
+                        float worldZ = z + offsets.z;
+                        float dz = SpawnPosition.z - worldZ;
+                        if ((dxySqr + dz * dz) < spawnRadiusSqr)
                         {
                             density = 0;
                         }
 
-                        densities[x * sizeSquared + y * chunkSize + z] = density;
+                        densities[xSlicePlusYRow + z] = density;
                     }
                 }
             }
@@ -43,7 +77,6 @@ namespace Assets.Generation
 
         public void Dispose()
         {
-            
         }
     }
 }

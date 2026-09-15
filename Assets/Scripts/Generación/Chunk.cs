@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using Assets.Rendering;
 
@@ -7,16 +7,17 @@ namespace Assets.Generation
     public class Chunk : MonoBehaviour, IDisposable
     {
         public const int ChunkSize = 32;
+        public const int PointsPerAxis = ChunkSize + 1;
         public const int Bitshift = 5;
         public Vector3 Position { get; private set; }
         public bool ShouldBuild;
         public bool IsGenerated;
-        public int Lod;
+        public int Lod = 1;
         public bool Disposed;
 
         private Mesh _mesh;
         private World _world;
-        private readonly float[] _blocks = new float[ChunkSize * ChunkSize * ChunkSize];
+        private readonly float[] _blocks = new float[PointsPerAxis * PointsPerAxis * PointsPerAxis];
         private readonly WorldGenerator _generator = new WorldGenerator();
         private readonly Vector3[] _vertCache = new Vector3[12];
 
@@ -43,52 +44,44 @@ namespace Assets.Generation
 
         public void Generate()
         {
+            if (Disposed)
+                return;
+
             // Generación de los datos del chunk
             _generator.Generate(_blocks, Position, ChunkSize);
+
+            if (Disposed)
+                return;
+
             IsGenerated = true;
             ShouldBuild = true;
             
-            // Después de generar, verificar si se puede construir inmediatamente
-            if (HasMinimumNeighbours())
-            {
-                _world.AddToQueue(this, true);
-            }
+            _world.AddToQueue(this, true);
         }
 
         public void Build()
         {
+            if (Disposed)
+                return;
+
             // Construcción del mesh del chunk
             ShouldBuild = false;
 
-            int sizeSquared = ChunkSize * ChunkSize;
-
-            bool Next = false;
             GridCell Cell = new GridCell();
             Cell.P = new Vector3[8];
             Cell.Density = new double[8];
 
             VertexData BlockData = new VertexData();
-            Chunk RightChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, 0, 0));
-            Chunk TopChunk = _world.GetChunkByOffset(Position + new Vector3(0, ChunkSize, 0));
-            Chunk FrontChunk = _world.GetChunkByOffset(Position + new Vector3(0, 0, ChunkSize));
-
-            Chunk RightFrontChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, 0, ChunkSize));
-            Chunk TopFrontChunk = _world.GetChunkByOffset(Position + new Vector3(0, ChunkSize, ChunkSize));
-            Chunk TopRightFrontChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, ChunkSize, ChunkSize));
-            Chunk TopRightChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, ChunkSize, 0));
+            int pointsPerAxis = PointsPerAxis;
+            int sliceSize = pointsPerAxis * pointsPerAxis;
 
             for (int y = 0; y < ChunkSize; y += Lod)
             {
                 for (int x = 0; x < ChunkSize; x += Lod)
                 {
-                    Next = !Next;
                     for (int z = 0; z < ChunkSize; z += Lod)
                     {
-                        Next = !Next;
-
-                        bool Success;
-                        CreateCell(x, y, z, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk,
-                            TopFrontChunk, TopRightFrontChunk, TopChunk, Cell, out Success);
+                        BuildCell(x, y, z, Cell, sliceSize, pointsPerAxis);
 
                         if (!MarchingCubes.Usable(0f, Cell))
                             continue;
@@ -100,189 +93,67 @@ namespace Assets.Generation
 
             ThreadManager.ExecuteOnMainThread(delegate
             {
-                if (!Disposed)
+                if (!Disposed && this != null)
                 {
-                    _mesh.Clear();
-                    _mesh.SetVertices(BlockData.Vertices);
-                    _mesh.SetNormals(BlockData.Normals);
-                    _mesh.SetIndices(BlockData.Indices.ToArray(), MeshTopology.Triangles, 0);
+                    if (_mesh != null)
+                    {
+                        _mesh.Clear();
+                        _mesh.SetVertices(BlockData.Vertices);
+                        _mesh.SetNormals(BlockData.Normals);
+                        _mesh.SetIndices(BlockData.Indices.ToArray(), MeshTopology.Triangles, 0);
+                    }
                     
-                    if (_mesh.vertexCount > 0)
-                        GetComponent<MeshCollider>().sharedMesh = _mesh;
-                    else
-                        GetComponent<MeshCollider>().sharedMesh = null;
+                    MeshCollider collider = GetComponent<MeshCollider>();
+                    if (collider != null)
+                    {
+                        if (_mesh != null && _mesh.vertexCount > 0)
+                            collider.sharedMesh = _mesh;
+                        else
+                            collider.sharedMesh = null;
+                    }
                 }
             });
         }
 
-        private void CreateCell(float x, float y, float z, Chunk RightChunk, Chunk FrontChunk, Chunk RightFrontChunk, Chunk TopRightChunk, Chunk TopFrontChunk, Chunk TopRightFrontChunk, Chunk TopChunk, GridCell Cell, out bool Success)
+        private void BuildCell(int x, int y, int z, GridCell Cell, int sliceSize, int pointsPerAxis)
         {
-            // Creación de una celda y obtención de densidades vecinas
-            Success = true;
-            BuildCell(x, y, z, Cell);
-            int _x = (int)x, _y = (int)y, _z = (int)z;
+            int lod = Lod;
+            int x1 = x + lod;
+            int y1 = y + lod;
+            int z1 = z + lod;
 
-            Cell.Density[0] = GetNeighbourDensity(_x, _y, _z, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
-            Cell.Density[1] = GetNeighbourDensity(_x + Lod, _y, _z, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
-            Cell.Density[2] = GetNeighbourDensity(_x + Lod, _y, _z + Lod, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
-            Cell.Density[3] = GetNeighbourDensity(_x, _y, _z + Lod, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
-            Cell.Density[4] = GetNeighbourDensity(_x, _y + Lod, _z, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
-            Cell.Density[5] = GetNeighbourDensity(_x + Lod, _y + Lod, _z, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
-            Cell.Density[6] = GetNeighbourDensity(_x + Lod, _y + Lod, _z + Lod, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
-            Cell.Density[7] = GetNeighbourDensity(_x, _y + Lod, _z + Lod, RightChunk, FrontChunk, RightFrontChunk, TopRightChunk, TopFrontChunk, TopRightFrontChunk, TopChunk);
-
-            // Solo marcar como no exitoso si todas las densidades son exactamente 0 (caso muy raro)
-            int zeroDensities = 0;
-            for (int i = 0; i < Cell.Density.Length; i++)
-            {
-                if (Cell.Density[i] == 0f)
-                {
-                    zeroDensities++;
-                }
-            }
-            
-            // Solo fallar si más del 75% de las densidades son 0 
-            Success = zeroDensities < (Cell.Density.Length * 0.75f);
-        }
-
-        private void BuildCell(float x, float y, float z, GridCell Cell)
-        {
-            // Construcción de una celda
             Cell.P[0] = new Vector3(x, y, z);
-            Cell.P[1] = new Vector3(x + Lod, y, z);
-            Cell.P[2] = new Vector3(x + Lod, y, z + Lod);
-            Cell.P[3] = new Vector3(x, y, z + Lod);
-            Cell.P[4] = new Vector3(x, y + Lod, z);
-            Cell.P[5] = new Vector3(x + Lod, y + Lod, z);
-            Cell.P[6] = new Vector3(x + Lod, y + Lod, z + Lod);
-            Cell.P[7] = new Vector3(x, y + Lod, z + Lod);
-        }
+            Cell.P[1] = new Vector3(x1, y, z);
+            Cell.P[2] = new Vector3(x1, y, z1);
+            Cell.P[3] = new Vector3(x, y, z1);
+            Cell.P[4] = new Vector3(x, y1, z);
+            Cell.P[5] = new Vector3(x1, y1, z);
+            Cell.P[6] = new Vector3(x1, y1, z1);
+            Cell.P[7] = new Vector3(x, y1, z1);
 
-        private float GetNeighbourDensity(int x, int y, int z, Chunk RightChunk, Chunk FrontChunk, Chunk RightFrontChunk, Chunk TopRightChunk, Chunk TopFrontChunk, Chunk TopRightFrontChunk, Chunk TopChunk)
-        {
-            // Obtención de densidad de vecinos
-            int WIDTH = ChunkSize;
-            int HEIGHT = ChunkSize;
-            int DEPTH = ChunkSize;
+            int x0Slice = x * sliceSize;
+            int x1Slice = x1 * sliceSize;
+            int y0Row = y * pointsPerAxis;
+            int y1Row = y1 * pointsPerAxis;
 
-            bool bX = x >= ChunkSize;
-            bool bY = y >= ChunkSize;
-            bool bZ = z >= ChunkSize;
-
-            if (bX && !bY && bZ && RightFrontChunk != null && !RightFrontChunk.Disposed && RightFrontChunk.IsGenerated)
-                return RightFrontChunk.GetBlockAt(x - WIDTH, y, z - DEPTH);
-
-            if (bZ && !bY && !bX && FrontChunk != null && !FrontChunk.Disposed && FrontChunk.IsGenerated)
-                return FrontChunk.GetBlockAt(x, y, z - DEPTH);
-
-            if (bX && !bY && !bZ && RightChunk != null && !RightChunk.Disposed && RightChunk.IsGenerated)
-                return RightChunk.GetBlockAt(x - WIDTH, y, z);
-
-            if (bX && bY && bZ && TopRightFrontChunk != null && !TopRightFrontChunk.Disposed && TopRightFrontChunk.IsGenerated)
-                return TopRightFrontChunk.GetBlockAt(x - WIDTH, y - HEIGHT, z - DEPTH);
-
-            if (!bX && bY && bZ && TopFrontChunk != null && !TopFrontChunk.Disposed && TopFrontChunk.IsGenerated)
-                return TopFrontChunk.GetBlockAt(x, y - HEIGHT, z - DEPTH);
-
-            if (bX && bY && !bZ && TopRightChunk != null && !TopRightChunk.Disposed && TopRightChunk.IsGenerated)
-                return TopRightChunk.GetBlockAt(x - WIDTH, y - HEIGHT, z);
-
-            if (!bX && bY && !bZ && TopChunk != null && !TopChunk.Disposed && TopChunk.IsGenerated)
-                return TopChunk.GetBlockAt(x, y - HEIGHT, z);
-
-            if (!bX && !bY && !bZ)
-            {
-                return _blocks[x * ChunkSize * ChunkSize + y * ChunkSize + z];
-            }
-
-            // En lugar de devolver 0, interpolar basado en los bloques internos cercanos
-            if (bX && !bY && !bZ)
-            {
-                int ix = ChunkSize - 1;
-                return _blocks[ix * ChunkSize * ChunkSize + y * ChunkSize + z];
-            }
-            if (!bX && bY && !bZ)
-            {
-                int iy = ChunkSize - 1;
-                return _blocks[x * ChunkSize * ChunkSize + iy * ChunkSize + z];
-            }
-            if (!bX && !bY && bZ)
-            {
-                int iz = ChunkSize - 1;
-                return _blocks[x * ChunkSize * ChunkSize + y * ChunkSize + iz];
-            }
-
-            // Para casos complejos, usar el valor promedio de los bloques internos cercanos
-            float avgDensity = 0f;
-            int count = 0;
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                for (int dy = -1; dy <= 1; dy++)
-                {
-                    for (int dz = -1; dz <= 1; dz++)
-                    {
-                        int nx = Mathf.Clamp(x + dx, 0, ChunkSize - 1);
-                        int ny = Mathf.Clamp(y + dy, 0, ChunkSize - 1);
-                        int nz = Mathf.Clamp(z + dz, 0, ChunkSize - 1);
-                        if (nx < ChunkSize && ny < ChunkSize && nz < ChunkSize)
-                        {
-                            avgDensity += _blocks[nx * ChunkSize * ChunkSize + ny * ChunkSize + nz];
-                            count++;
-                        }
-                    }
-                }
-            }
-            return count > 0 ? avgDensity / count : 1f; // Devolver 1f como valor por defecto en lugar de 0
+            Cell.Density[0] = _blocks[x0Slice + y0Row + z];
+            Cell.Density[1] = _blocks[x1Slice + y0Row + z];
+            Cell.Density[2] = _blocks[x1Slice + y0Row + z1];
+            Cell.Density[3] = _blocks[x0Slice + y0Row + z1];
+            Cell.Density[4] = _blocks[x0Slice + y1Row + z];
+            Cell.Density[5] = _blocks[x1Slice + y1Row + z];
+            Cell.Density[6] = _blocks[x1Slice + y1Row + z1];
+            Cell.Density[7] = _blocks[x0Slice + y1Row + z1];
         }
 
         public bool NeighboursExists
         {
-            get
-            {
-                // Verifica si existen vecinos generados
-                int conditions = 0;
-
-                Chunk RightChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, 0, 0));
-                conditions += (RightChunk != null && RightChunk.IsGenerated) ? 1 : 0;
-
-                Chunk TopChunk = _world.GetChunkByOffset(Position + new Vector3(0, ChunkSize, 0));
-                conditions += (TopChunk != null && TopChunk.IsGenerated) ? 1 : 0;
-
-                Chunk FrontChunk = _world.GetChunkByOffset(Position + new Vector3(0, 0, ChunkSize));
-                conditions += (FrontChunk != null && FrontChunk.IsGenerated) ? 1 : 0;
-
-                Chunk RightFrontChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, 0, ChunkSize));
-                conditions += (RightFrontChunk != null && RightFrontChunk.IsGenerated) ? 1 : 0;
-
-                Chunk TopFrontChunk = _world.GetChunkByOffset(Position + new Vector3(0, ChunkSize, ChunkSize));
-                conditions += (TopFrontChunk != null && TopFrontChunk.IsGenerated) ? 1 : 0;
-
-                Chunk TopRightFrontChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, ChunkSize, ChunkSize));
-                conditions += (TopRightFrontChunk != null && TopRightFrontChunk.IsGenerated) ? 1 : 0;
-
-                Chunk TopRightChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, ChunkSize, 0));
-                conditions += (TopRightChunk != null && TopRightChunk.IsGenerated) ? 1 : 0;
-
-                return conditions == 7;
-            }
+            get { return true; }
         }
 
         public bool HasMinimumNeighbours()
         {
-            // Verifica si existen al menos los vecinos básicos necesarios (menos restrictivo)
-            int conditions = 0;
-
-            Chunk RightChunk = _world.GetChunkByOffset(Position + new Vector3(ChunkSize, 0, 0));
-            conditions += (RightChunk != null && RightChunk.IsGenerated) ? 1 : 0;
-
-            Chunk TopChunk = _world.GetChunkByOffset(Position + new Vector3(0, ChunkSize, 0));
-            conditions += (TopChunk != null && TopChunk.IsGenerated) ? 1 : 0;
-
-            Chunk FrontChunk = _world.GetChunkByOffset(Position + new Vector3(0, 0, ChunkSize));
-            conditions += (FrontChunk != null && FrontChunk.IsGenerated) ? 1 : 0;
-
-            // Solo requiere 3 de los 7 vecinos principales para construir la malla
-            return conditions >= 2;
+            return true;
         }
 
         public float GetBlockAt(Vector3 v)
@@ -292,23 +163,36 @@ namespace Assets.Generation
 
         public float GetBlockAt(int x, int y, int z)
         {
-            if (IsGenerated)
-                return _blocks[x * ChunkSize * ChunkSize + y * ChunkSize + z];
+            if (IsGenerated && x >= 0 && x < PointsPerAxis && y >= 0 && y < PointsPerAxis && z >= 0 && z < PointsPerAxis)
+                return _blocks[x * (PointsPerAxis * PointsPerAxis) + y * PointsPerAxis + z];
             else
                 return 0;
         }
 
         public void Dispose()
         {
-            // Limpia y destruye el chunk
+            if (Disposed)
+                return;
+
+            Disposed = true;
+
             ThreadManager.ExecuteOnMainThread(delegate
             {
-                _mesh.Clear();
-                Destroy(_mesh);
+                if (this != null)
+                {
+                    if (_mesh != null)
+                    {
+                        _mesh.Clear();
+                        Destroy(_mesh);
+                        _mesh = null;
+                    }
+
+                    if (gameObject != null)
+                    {
+                        Destroy(gameObject);
+                    }
+                }
             });
-            Disposed = true;
-            _generator.Dispose();
-            ThreadManager.ExecuteOnMainThread(() => Destroy(gameObject));
         }
     }
 }
