@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -121,7 +121,9 @@ public class TimeControl : MonoBehaviour
     
     IEnumerator LostCoroutine()
     {
+#if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
         Handheld.Vibrate();
+#endif
         
         if (GameObject.FindWithTag("Joystick") != null)
         {

@@ -14,8 +14,12 @@ public class KeyPressTimer : MonoBehaviour
 
     void Start()
     {
-        canvas = GameObject.FindGameObjectWithTag("Canvas");
-        player = GameObject.FindGameObjectWithTag("Player");
+        if (canvas == null)
+            canvas = GameObject.FindGameObjectWithTag("Canvas");
+        if (player == null)
+            player = GameObject.FindGameObjectWithTag("Player");
+        if (keyIndicator == null)
+            keyIndicator = GetComponentInChildren<Image>(true);
     }
 
     void Update()
@@ -33,16 +37,28 @@ public class KeyPressTimer : MonoBehaviour
         if (Input.touchCount <= 1 && isKeyPressActive)
         {
             // Verificar si ha transcurrido más tiempo del necesario y si hay energía suficiente
-            if (timer > keyPressDuration && canvas.GetComponent<TimeControl>().energyLeft > 0)
+            bool hasEnergy = false;
+            if (canvas != null && canvas.TryGetComponent<TimeControl>(out var timeControl))
             {
-                keyIndicator.gameObject.SetActive(true);
+                hasEnergy = timeControl.energyLeft > 0;
+            }
+
+            if (timer > keyPressDuration && hasEnergy)
+            {
+                if (keyIndicator != null)
+                {
+                    keyIndicator.gameObject.SetActive(true);
+                }
             }
         }
 
         // Detectar si se presionan dos dedos y se había activado la tecla
         if (Input.touchCount >= 2 && isKeyPressActive)
         {
-            keyIndicator.gameObject.SetActive(false);
+            if (keyIndicator != null)
+            {
+                keyIndicator.gameObject.SetActive(false);
+            }
             timer = 0;
             isKeyPressActive = false;
             Destroy(this);

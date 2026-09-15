@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Collections;
@@ -36,30 +36,33 @@ namespace Assets.Generation
 
         public void Sort()
         {
-            try
+            lock (Queue)
             {
-                if (Queue.Count <= 1)
-                    return;
-
-                _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * Chunk.ChunkSize * 4f;
-                
-                Queue.RemoveAll(chunk => ReferenceEquals(chunk, null));
-                
-                var keysToRemove = _queueDict.Keys.Where(chunk => ReferenceEquals(chunk, null)).ToList();
-                foreach (var key in keysToRemove)
+                try
                 {
-                    _queueDict.Remove(key);
+                    if (Queue.Count <= 1)
+                        return;
+
+                    _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * Chunk.ChunkSize * 4f;
+                    
+                    Queue.RemoveAll(chunk => ReferenceEquals(chunk, null));
+                    
+                    var keysToRemove = _queueDict.Keys.Where(chunk => ReferenceEquals(chunk, null)).ToList();
+                    foreach (var key in keysToRemove)
+                    {
+                        _queueDict.Remove(key);
+                    }
+                    
+                    Queue.Sort(_closestChunkComparer);
                 }
-                
-                Queue.Sort(_closestChunkComparer);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("Error al ordenar la cola de mesh: " + e.Message);
-                Debug.LogError("Stack trace: " + e.StackTrace);
-                
-                Queue.Clear();
-                _queueDict.Clear();
+                catch (Exception e)
+                {
+                    Debug.LogError("Error al ordenar la cola de mesh: " + e.Message);
+                    Debug.LogError("Stack trace: " + e.StackTrace);
+                    
+                    Queue.Clear();
+                    _queueDict.Clear();
+                }
             }
         }
 
