@@ -131,15 +131,15 @@ public class TimeControl : MonoBehaviour
             joystick.gameObject.SetActive(false);
         }
         
-        yield return new WaitForSeconds(3 / (1 / Time.timeScale));
+        yield return new WaitForSecondsRealtime(3f);
         
         targetGameOver = 0;
 
         while (isLost)
         {
-            yield return new WaitForSeconds(1 / (1 / Time.timeScale));
+            yield return new WaitForSecondsRealtime(1f);
             targetRestart = 1;
-            yield return new WaitForSeconds(1 / (1 / Time.timeScale));
+            yield return new WaitForSecondsRealtime(1f);
             targetRestart = 0;
         }
     }
@@ -148,9 +148,9 @@ public class TimeControl : MonoBehaviour
     {
         while (isLost)
         {
-            yield return new WaitForSeconds(0.5f / (1 / Time.timeScale));
+            yield return new WaitForSecondsRealtime(0.5f);
             targetStart = 1;
-            yield return new WaitForSeconds(0.5f / (1 / Time.timeScale));
+            yield return new WaitForSecondsRealtime(0.5f);
             targetStart = 0;
         }
     }
@@ -242,19 +242,19 @@ public class TimeControl : MonoBehaviour
         
         sound.pitch = Mathf.Lerp(sound.pitch, targetPitch, Time.deltaTime * 8f);
         
-        gameTitle.color = new Color(gameTitle.color.r, gameTitle.color.g, gameTitle.color.b, Mathf.Lerp(gameTitle.color.a, targetTitle, Time.deltaTime * 4f * (1 / Time.timeScale)));
-        startButton.color = new Color(startButton.color.r, startButton.color.g, startButton.color.b, Mathf.Lerp(startButton.color.a, targetStart, Time.deltaTime * 4f * (1 / Time.timeScale)));
-        gameOverText.color = new Color(gameOverText.color.r, gameOverText.color.g, gameOverText.color.b, Mathf.Lerp(gameOverText.color.a, targetGameOver, Time.deltaTime * 4f * (1 / Time.timeScale)));
-        restartButton.color = new Color(restartButton.color.r, restartButton.color.g, restartButton.color.b, Mathf.Lerp(restartButton.color.a, targetRestart, Time.deltaTime * 4f * (1 / Time.timeScale)));
-        invertToggle.targetGraphic.color = new Color(invertToggle.targetGraphic.color.r, invertToggle.targetGraphic.color.g, invertToggle.targetGraphic.color.b, Mathf.Lerp(invertToggle.targetGraphic.color.a, targetInvert, Time.deltaTime * 4f * (1 / Time.timeScale)));
-        invertText.color = new Color(invertText.color.r, invertText.color.g, invertText.color.b, Mathf.Lerp(invertText.color.a, targetInvert, Time.deltaTime * 4f * (1 / Time.timeScale)));
-        optionsButton.image.color = new Color(optionsButton.image.color.r, optionsButton.image.color.g, optionsButton.image.color.b, Mathf.Lerp(optionsButton.image.color.a, targetInvert, Time.deltaTime * 4f * (1 / Time.timeScale)));
-        invertCheck.color = new Color(invertCheck.color.r, invertCheck.color.g, invertCheck.color.b, Mathf.Lerp(invertCheck.color.a, targetInvert, Time.deltaTime * 4f * (1 / Time.timeScale)));
+        gameTitle.color = new Color(gameTitle.color.r, gameTitle.color.g, gameTitle.color.b, Mathf.Lerp(gameTitle.color.a, targetTitle, Time.unscaledDeltaTime * 4f));
+        startButton.color = new Color(startButton.color.r, startButton.color.g, startButton.color.b, Mathf.Lerp(startButton.color.a, targetStart, Time.unscaledDeltaTime * 4f));
+        gameOverText.color = new Color(gameOverText.color.r, gameOverText.color.g, gameOverText.color.b, Mathf.Lerp(gameOverText.color.a, targetGameOver, Time.unscaledDeltaTime * 4f));
+        restartButton.color = new Color(restartButton.color.r, restartButton.color.g, restartButton.color.b, Mathf.Lerp(restartButton.color.a, targetRestart, Time.unscaledDeltaTime * 4f));
+        invertToggle.targetGraphic.color = new Color(invertToggle.targetGraphic.color.r, invertToggle.targetGraphic.color.g, invertToggle.targetGraphic.color.b, Mathf.Lerp(invertToggle.targetGraphic.color.a, targetInvert, Time.unscaledDeltaTime * 4f));
+        invertText.color = new Color(invertText.color.r, invertText.color.g, invertText.color.b, Mathf.Lerp(invertText.color.a, targetInvert, Time.unscaledDeltaTime * 4f));
+        optionsButton.image.color = new Color(optionsButton.image.color.r, optionsButton.image.color.g, optionsButton.image.color.b, Mathf.Lerp(optionsButton.image.color.a, targetInvert, Time.unscaledDeltaTime * 4f));
+        invertCheck.color = new Color(invertCheck.color.r, invertCheck.color.g, invertCheck.color.b, Mathf.Lerp(invertCheck.color.a, targetInvert, Time.unscaledDeltaTime * 4f));
         
         if (targetTitle != 1)
         {
-            scoreText.color = new Color(scoreText.color.r, scoreText.color.g, scoreText.color.b, Mathf.Lerp(scoreText.color.a, 1 - targetScore, Time.deltaTime * 2f * (1 / Time.timeScale)));
-            scoreCenterText.color = new Color(scoreCenterText.color.r, scoreCenterText.color.g, scoreCenterText.color.b, Mathf.Lerp(scoreCenterText.color.a, targetScore, Time.deltaTime * 2f * (1 / Time.timeScale)));
+            scoreText.color = new Color(scoreText.color.r, scoreText.color.g, scoreText.color.b, Mathf.Lerp(scoreText.color.a, 1 - targetScore, Time.unscaledDeltaTime * 2f));
+            scoreCenterText.color = new Color(scoreCenterText.color.r, scoreCenterText.color.g, scoreCenterText.color.b, Mathf.Lerp(scoreCenterText.color.a, targetScore, Time.unscaledDeltaTime * 2f));
         }
         
         if (isLost)
@@ -262,7 +262,7 @@ public class TimeControl : MonoBehaviour
 
         if (Input.touchCount > 1 && energyLeft > 0 && !wasPressed)
         {
-            energyLeft -= Time.deltaTime * energyUsage * (1 / Time.timeScale);
+            energyLeft -= Time.unscaledDeltaTime * energyUsage;
             energyLeft = Mathf.Clamp(energyLeft, 0, 100);
             isUsing = true;
         }
