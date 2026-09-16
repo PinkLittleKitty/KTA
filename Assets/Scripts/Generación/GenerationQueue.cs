@@ -14,6 +14,7 @@ namespace Assets.Generation
         private readonly AutoResetEvent _workSignal = new AutoResetEvent(false);
         private readonly Thread[] _workers;
         private volatile bool _stop;
+        private volatile bool _needsSort = false;
 
         public bool Stop
         {
@@ -55,7 +56,10 @@ namespace Assets.Generation
                 try
                 {
                     if (Queue.Count <= 1)
+                    {
+                        _needsSort = false;
                         return;
+                    }
 
                     _closestChunkComparer.PlayerPos = _world.PlayerPosition + _world.PlayerOrientation * (Chunk.ChunkSize * 4f);
                     
@@ -63,6 +67,7 @@ namespace Assets.Generation
                     _queueSet.RemoveWhere(chunk => chunk == null || chunk.Disposed);
                     
                     Queue.Sort(_closestChunkComparer);
+                    _needsSort = false;
                 }
                 catch (Exception e)
                 {
@@ -71,6 +76,7 @@ namespace Assets.Generation
                     
                     Queue.Clear();
                     _queueSet.Clear();
+                    _needsSort = false;
                 }
             }
         }
@@ -85,6 +91,7 @@ namespace Assets.Generation
                 if (_queueSet.Add(c))
                 {
                     Queue.Add(c);
+                    _needsSort = true;
                 }
             }
             _workSignal.Set();
@@ -121,13 +128,21 @@ namespace Assets.Generation
 
                         if (Queue.Count > 0)
                         {
-                            workingChunk = Queue[0];
-                            Queue.RemoveAt(0);
-                            if (workingChunk != null)
-                                _queueSet.Remove(workingChunk);
+                            if (_needsSort)
+                            {
+                                Sort();
+                            }
 
                             if (Queue.Count > 0)
-                                _workSignal.Set();
+                            {
+                                workingChunk = Queue[0];
+                                Queue.RemoveAt(0);
+                                if (workingChunk != null)
+                                    _queueSet.Remove(workingChunk);
+
+                                if (Queue.Count > 0)
+                                    _workSignal.Set();
+                            }
                         }
                     }
 

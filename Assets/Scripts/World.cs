@@ -30,21 +30,11 @@ public class World : MonoBehaviour {
     }
 
     void Update(){
-
         PlayerPosition = Player.transform.position;
         PlayerOrientation = Player.transform.forward;
 
-        int _genCount = 0, _meshCount = 0;
-        foreach (KeyValuePair<Vector3, Chunk> Pair in Chunks) {
-            if (!Pair.Value.IsGenerated)
-                _genCount++;
-
-            if (Pair.Value.ShouldBuild)
-                _meshCount++;
-        }
-
-        GenQueue = _genCount;
-        MeshQueue = _meshCount;
+        GenQueue = _generationQueue.Queue.Count;
+        MeshQueue = _meshQueue.Queue.Count;
 
         ChunkLoaderRadius = (int)sliderUI.value;
     }

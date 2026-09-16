@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
@@ -411,22 +411,16 @@ namespace Assets.Rendering
 
 		private static Vector3 VertexInterp(double IsoLevel, Vector3 P1, Vector3 P2, double valp1, double valp2)
 		{
-			Vector4 p1 = new Vector4(P1.x, P1.y, P1.z, (float) valp1);
-			Vector4 p2 = new Vector4(P2.x, P2.y, P2.z, (float) valp2);
+			double diff = valp2 - valp1;
+			if (Math.Abs(diff) < 0.00001)
+				return P1;
 
-			if (p2.magnitude < p1.magnitude){
-				Vector4 temp;
-				temp = p1;
-				p1 = p2;
-				p2 = temp;    
-			}
-
-			Vector3 p;
-			if(Math.Abs(p1.w - p2.w) > 0.00001)
-				p = p1.Xyz() + (p2.Xyz() - p1.Xyz() ) / (p2.w - p1.w)*( (float) IsoLevel - p1.w);
-			else 
-				p = p1.Xyz();
-			return p;
+			float t = (float)((IsoLevel - valp1) / diff);
+			return new Vector3(
+				P1.x + t * (P2.x - P1.x),
+				P1.y + t * (P2.y - P1.y),
+				P1.z + t * (P2.z - P1.z)
+			);
 		}
 	}
 

@@ -17,8 +17,9 @@ namespace Assets.Generation
         private Vector3 _lastOffset = new Vector3(float.MinValue, float.MinValue, float.MinValue);
         private float _lastRadius;
         private Vector3 _playerPosition, _position;
-        private Thread _t1, _t2;
         private bool Stop;
+        private readonly List<Vector3> _missingPositions = new List<Vector3>();
+        private readonly List<Chunk> _toRemove = new List<Chunk>();
 
         void Awake()
         {
@@ -33,7 +34,10 @@ namespace Assets.Generation
 
         void Update()
         {
-            _playerPosition = Player.transform.position;
+            if (Player != null)
+            {
+                _playerPosition = Player.transform.position;
+            }
             _position = transform.position;
         }
 
@@ -50,31 +54,72 @@ namespace Assets.Generation
 
                 if (Offset != _lastOffset || World.ChunkLoaderRadius != _lastRadius)
                 {
-                    for (int _x = -World.ChunkLoaderRadius / 2; _x < World.ChunkLoaderRadius / 2; _x++)
-                    {
-                        for (int _z = -World.ChunkLoaderRadius / 2; _z < World.ChunkLoaderRadius / 2; _z++)
-                        {
-                            for (int _y = -World.ChunkLoaderRadius / 2; _y < World.ChunkLoaderRadius / 2; _y++)
-                            {
-                                int x = _x, y = _y, z = _z;
+                    _lastRadius = World.ChunkLoaderRadius;
+                    _lastOffset = Offset;
 
-                                if (World.GetChunkByOffset(Offset + Vector3.Scale(new Vector3(x, y, z), new Vector3(Chunk.ChunkSize, Chunk.ChunkSize, Chunk.ChunkSize))) == null)
+                    float radiusInChunks = World.ChunkLoaderRadius * 0.5f;
+                    float loadRadius = radiusInChunks * Chunk.ChunkSize;
+                    float loadRadiusSqr = loadRadius * loadRadius;
+                    int chunkRadius = Mathf.CeilToInt(radiusInChunks);
+
+                    _missingPositions.Clear();
+
+                    for (int _x = -chunkRadius; _x <= chunkRadius; _x++)
+                    {
+                        for (int _z = -chunkRadius; _z <= chunkRadius; _z++)
+                        {
+                            for (int _y = -chunkRadius; _y <= chunkRadius; _y++)
+                            {
+                                Vector3 chunkPos = Offset + new Vector3(_x * Chunk.ChunkSize, _y * Chunk.ChunkSize, _z * Chunk.ChunkSize);
+
+                                Vector3 chunkCenter = chunkPos + new Vector3(Chunk.ChunkSize * 0.5f, Chunk.ChunkSize * 0.5f, Chunk.ChunkSize * 0.5f);
+                                if ((chunkCenter - _playerPosition).sqrMagnitude > loadRadiusSqr)
+                                    continue;
+
+                                if (World.GetChunkByOffset(chunkPos) == null)
                                 {
-                                    Vector3 chunkPos = Offset + Vector3.Scale(new Vector3(x, y, z), new Vector3(Chunk.ChunkSize, Chunk.ChunkSize, Chunk.ChunkSize));
-                                    GameObject NewChunk = new GameObject("Chunk " + (chunkPos.x) + " " + (chunkPos.y) + " " + (chunkPos.z));
-                                    NewChunk.transform.position = chunkPos;
-                                    NewChunk.transform.SetParent(World.gameObject.transform);
-                                    Chunk chunk = NewChunk.AddComponent<Chunk>();
-                                    chunk.Init(chunkPos, World);
-                                    chunk.Lod = 2;
-                                    World.AddChunk(chunkPos, chunk);
+                                    _missingPositions.Add(chunkPos);
                                 }
                             }
                         }
                     }
-                    _lastRadius = World.ChunkLoaderRadius;
-                    _lastOffset = Offset;
-                    World.SortGenerationQueue();
+
+                    if (_missingPositions.Count > 0)
+                    {
+                        Vector3 forward = Player != null ? Player.transform.forward : Vector3.forward;
+                        Vector3 focusPoint = _playerPosition + forward * (Chunk.ChunkSize * 3f);
+
+                        _missingPositions.Sort((a, b) =>
+                        {
+                            float distA = (a - focusPoint).sqrMagnitude;
+                            float distB = (b - focusPoint).sqrMagnitude;
+                            return distA.CompareTo(distB);
+                        });
+
+                        int createdThisFrame = 0;
+                        for (int i = 0; i < _missingPositions.Count; i++)
+                        {
+                            Vector3 chunkPos = _missingPositions[i];
+                            if (World.GetChunkByOffset(chunkPos) == null)
+                            {
+                                GameObject newChunk = new GameObject("Chunk " + (chunkPos.x) + " " + (chunkPos.y) + " " + (chunkPos.z));
+                                newChunk.transform.position = chunkPos;
+                                newChunk.transform.SetParent(World.gameObject.transform);
+                                Chunk chunk = newChunk.AddComponent<Chunk>();
+                                chunk.Init(chunkPos, World);
+                                chunk.Lod = 2;
+                                World.AddChunk(chunkPos, chunk);
+
+                                createdThisFrame++;
+                                if (createdThisFrame >= 10)
+                                {
+                                    createdThisFrame = 0;
+                                    yield return null;
+                                    if (Stop) yield break;
+                                }
+                            }
+                        }
+                    }
                 }
             SLEEP:
                 yield return null;
@@ -83,8 +128,7 @@ namespace Assets.Generation
 
         private IEnumerator ManageChunksMesh()
         {
-            var wait = new WaitForSeconds(0.25f);
-            var toRemove = new List<Chunk>();
+            var wait = new WaitForSeconds(0.5f);
 
             while (true)
             {
@@ -92,10 +136,12 @@ namespace Assets.Generation
 
                 yield return wait;
 
-                float maxRadius = World.ChunkLoaderRadius * 0.5f * Chunk.ChunkSize;
-                float maxDistSqr = maxRadius * maxRadius;
+                float radiusInChunks = World.ChunkLoaderRadius * 0.5f;
+                float loadRadius = radiusInChunks * Chunk.ChunkSize;
+                float unloadRadius = loadRadius + (Chunk.ChunkSize * 1.5f);
+                float unloadDistSqr = unloadRadius * unloadRadius;
 
-                toRemove.Clear();
+                _toRemove.Clear();
                 lock (World.Chunks)
                 {
                     foreach (var chunk in World.Chunks.Values)
@@ -103,16 +149,22 @@ namespace Assets.Generation
                         if (chunk == null || chunk.Disposed)
                             continue;
 
-                        if ((chunk.Position - _playerPosition).sqrMagnitude > maxDistSqr)
+                        Vector3 chunkCenter = chunk.Position + new Vector3(Chunk.ChunkSize * 0.5f, Chunk.ChunkSize * 0.5f, Chunk.ChunkSize * 0.5f);
+                        if ((chunkCenter - _playerPosition).sqrMagnitude > unloadDistSqr)
                         {
-                            toRemove.Add(chunk);
+                            _toRemove.Add(chunk);
                         }
                     }
                 }
 
-                for (int i = 0; i < toRemove.Count; i++)
+                for (int i = 0; i < _toRemove.Count; i++)
                 {
-                    World.RemoveChunk(toRemove[i]);
+                    World.RemoveChunk(_toRemove[i]);
+                    if (i % 8 == 7)
+                    {
+                        yield return null;
+                        if (Stop) yield break;
+                    }
                 }
             }
         }

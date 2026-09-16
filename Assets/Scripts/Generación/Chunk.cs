@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using UnityEngine;
 using Assets.Rendering;
 
@@ -71,7 +72,7 @@ namespace Assets.Generation
             Cell.P = new Vector3[8];
             Cell.Density = new double[8];
 
-            VertexData BlockData = new VertexData();
+            VertexData BlockData = VertexData.Get();
             int pointsPerAxis = PointsPerAxis;
             int sliceSize = pointsPerAxis * pointsPerAxis;
 
@@ -81,11 +82,10 @@ namespace Assets.Generation
                 {
                     for (int z = 0; z < ChunkSize; z += Lod)
                     {
-                        BuildCell(x, y, z, Cell, sliceSize, pointsPerAxis);
-
-                        if (!MarchingCubes.Usable(0f, Cell))
+                        if (!BuildCellDensities(x, y, z, Cell, sliceSize, pointsPerAxis))
                             continue;
 
+                        BuildCellPositions(x, y, z, Cell);
                         MarchingCubes.Process(0f, Cell, BlockData, _vertCache);
                     }
                 }
@@ -100,36 +100,44 @@ namespace Assets.Generation
                         _mesh.Clear();
                         _mesh.SetVertices(BlockData.Vertices);
                         _mesh.SetNormals(BlockData.Normals);
-                        _mesh.SetIndices(BlockData.Indices.ToArray(), MeshTopology.Triangles, 0);
+                        _mesh.SetIndices(BlockData.Indices, MeshTopology.Triangles, 0, false);
                     }
                     
                     MeshCollider collider = GetComponent<MeshCollider>();
                     if (collider != null)
                     {
                         if (_mesh != null && _mesh.vertexCount > 0)
-                            collider.sharedMesh = _mesh;
+                        {
+                            int meshId = _mesh.GetInstanceID();
+                            ThreadPool.QueueUserWorkItem(_ =>
+                            {
+                                Physics.BakeMesh(meshId, false);
+                                ThreadManager.ExecuteOnMainThread(() =>
+                                {
+                                    if (collider != null && _mesh != null && !Disposed)
+                                    {
+                                        collider.sharedMesh = _mesh;
+                                    }
+                                });
+                            });
+                        }
                         else
+                        {
                             collider.sharedMesh = null;
+                        }
                     }
                 }
+
+                VertexData.Release(BlockData);
             });
         }
 
-        private void BuildCell(int x, int y, int z, GridCell Cell, int sliceSize, int pointsPerAxis)
+        private bool BuildCellDensities(int x, int y, int z, GridCell Cell, int sliceSize, int pointsPerAxis)
         {
             int lod = Lod;
             int x1 = x + lod;
             int y1 = y + lod;
             int z1 = z + lod;
-
-            Cell.P[0] = new Vector3(x, y, z);
-            Cell.P[1] = new Vector3(x1, y, z);
-            Cell.P[2] = new Vector3(x1, y, z1);
-            Cell.P[3] = new Vector3(x, y, z1);
-            Cell.P[4] = new Vector3(x, y1, z);
-            Cell.P[5] = new Vector3(x1, y1, z);
-            Cell.P[6] = new Vector3(x1, y1, z1);
-            Cell.P[7] = new Vector3(x, y1, z1);
 
             int x0Slice = x * sliceSize;
             int x1Slice = x1 * sliceSize;
@@ -144,6 +152,25 @@ namespace Assets.Generation
             Cell.Density[5] = _blocks[x1Slice + y1Row + z];
             Cell.Density[6] = _blocks[x1Slice + y1Row + z1];
             Cell.Density[7] = _blocks[x0Slice + y1Row + z1];
+
+            return MarchingCubes.Usable(0f, Cell);
+        }
+
+        private void BuildCellPositions(int x, int y, int z, GridCell Cell)
+        {
+            int lod = Lod;
+            int x1 = x + lod;
+            int y1 = y + lod;
+            int z1 = z + lod;
+
+            Cell.P[0] = new Vector3(x, y, z);
+            Cell.P[1] = new Vector3(x1, y, z);
+            Cell.P[2] = new Vector3(x1, y, z1);
+            Cell.P[3] = new Vector3(x, y, z1);
+            Cell.P[4] = new Vector3(x, y1, z);
+            Cell.P[5] = new Vector3(x1, y1, z);
+            Cell.P[6] = new Vector3(x1, y1, z1);
+            Cell.P[7] = new Vector3(x, y1, z1);
         }
 
         public bool NeighboursExists

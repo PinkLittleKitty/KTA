@@ -1,73 +1,64 @@
-﻿using System;
+using System;
 using System.Diagnostics;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class ThreadManager : MonoBehaviour
 {
-    // Lista de funciones que deben ejecutarse en el hilo principal
-    private static List<KeyValuePair<Action, Action>> Functions = new List<KeyValuePair<Action, Action>>();
+    private static readonly Queue<Action> _mainThreadQueue = new Queue<Action>();
+    private readonly Stopwatch _frameStopwatch = new Stopwatch();
 
-    // Variable que indica si la aplicación está en ejecución
     public static bool isPlaying = true;
 
-    // Ejecuta una función en el hilo principal
     public static void ExecuteOnMainThread(Action func)
     {
-        // Bloquea el acceso a la lista de funciones para evitar conflictos de concurrencia
-        lock (Functions)
+        if (func == null) return;
+        lock (_mainThreadQueue)
         {
-            // Agrega la función y una función de devolución de llamada nula a la lista
-            Functions.Add(new KeyValuePair<Action, Action>(func, () => NullCallBack()));
+            _mainThreadQueue.Enqueue(func);
         }
     }
 
-    // Ejecuta una función en el hilo principal y proporciona una función de devolución de llamada
-    public static void ExecuteOnMainThread(Action func, Action Callback)
+    public static void ExecuteOnMainThread(Action func, Action callback)
     {
-        // Bloquea el acceso a la lista de funciones para evitar conflictos de concurrencia
-        lock (Functions)
+        if (func == null) return;
+        lock (_mainThreadQueue)
         {
-            // Agrega la función y la función de devolución de llamada especificada a la lista
-            Functions.Add(new KeyValuePair<Action, Action>(func, Callback));
+            _mainThreadQueue.Enqueue(() =>
+            {
+                func();
+                callback?.Invoke();
+            });
         }
     }
 
-    // Pausa la ejecución durante un número específico de milisegundos
-    public static void Sleep(int Milliseconds)
+    public static void Sleep(int milliseconds)
     {
-        long start = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-        while (true)
-        {
-            long now = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            if (now - start >= Milliseconds)
-                break;
-        }
+        System.Threading.Thread.Sleep(milliseconds);
     }
-
-    // Función de devolución de llamada nula
-    private static void NullCallBack() { }
 
     void Update()
     {
-        // Verifica si la aplicación está en ejecución
         isPlaying = Application.isPlaying;
 
-        // Bloquea el acceso a la lista de funciones para evitar conflictos de concurrencia
-        lock (Functions)
+        _frameStopwatch.Restart();
+
+        while (_frameStopwatch.Elapsed.TotalMilliseconds < 8.0)
         {
-            for (int i = Functions.Count - 1; i > -1; i--)
+            Action action = null;
+            lock (_mainThreadQueue)
             {
-                // Ejecuta la función principal
-                Functions[i].Key();
-
-                // Ejecuta la función de devolución de llamada
-                Functions[i].Value();
-
-                // Elimina la función de la lista
-                Functions.RemoveAt(i);
+                if (_mainThreadQueue.Count > 0)
+                {
+                    action = _mainThreadQueue.Dequeue();
+                }
+                else
+                {
+                    break;
+                }
             }
+
+            action?.Invoke();
         }
     }
 }
