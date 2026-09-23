@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using Assets.Rendering;
@@ -18,6 +19,7 @@ namespace Assets.Generation
         public bool Disposed;
 
         private Mesh _mesh;
+        private Mesh _collisionMesh;
         private MeshFilter _filter;
         private MeshRenderer _renderer;
         private MeshCollider _collider;
@@ -38,12 +40,19 @@ namespace Assets.Generation
         void Awake()
         {
             _mesh = new Mesh();
-            _filter = gameObject.AddComponent<MeshFilter>();
-            _filter.mesh = _mesh;
-            _renderer = gameObject.AddComponent<MeshRenderer>();
+            _collisionMesh = new Mesh();
+
+            _filter = GetComponent<MeshFilter>();
+            if (_filter == null) _filter = gameObject.AddComponent<MeshFilter>();
+            _filter.sharedMesh = _mesh;
+
+            _renderer = GetComponent<MeshRenderer>();
+            if (_renderer == null) _renderer = gameObject.AddComponent<MeshRenderer>();
             _renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             _renderer.receiveShadows = false;
-            _collider = gameObject.AddComponent<MeshCollider>();
+
+            _collider = GetComponent<MeshCollider>();
+            if (_collider == null) _collider = gameObject.AddComponent<MeshCollider>();
         }
 
         public void Init(Vector3 Position, World World)
@@ -105,11 +114,70 @@ namespace Assets.Generation
                 }
             }
 
+            if (BlockData.Indices != null && BlockData.Indices.Count >= 6)
+            {
+                int triCount = BlockData.Indices.Count / 3;
+                Vector3 playerPos = _world != null ? _world.PlayerPosition : Vector3.zero;
+                int[] triOrder = new int[triCount];
+                float[] dists = new float[triCount];
+
+                for (int i = 0; i < triCount; i++)
+                {
+                    triOrder[i] = i;
+                    int idx = i * 3;
+                    Vector3 v0 = BlockData.Vertices[BlockData.Indices[idx]];
+                    Vector3 v1 = BlockData.Vertices[BlockData.Indices[idx + 1]];
+                    Vector3 v2 = BlockData.Vertices[BlockData.Indices[idx + 2]];
+                    Vector3 center = (v0 + v1 + v2) * (1f / 3f) + Position;
+                    dists[i] = (center - playerPos).sqrMagnitude;
+                }
+
+                Array.Sort(dists, triOrder);
+
+                List<int> sortedIndices = new List<int>(BlockData.Indices.Count);
+                for (int i = 0; i < triCount; i++)
+                {
+                    int srcIdx = triOrder[i] * 3;
+                    sortedIndices.Add(BlockData.Indices[srcIdx]);
+                    sortedIndices.Add(BlockData.Indices[srcIdx + 1]);
+                    sortedIndices.Add(BlockData.Indices[srcIdx + 2]);
+                }
+                BlockData.Indices = sortedIndices;
+            }
+
             ThreadManager.ExecuteOnMainThread(delegate
             {
                 if (!Disposed && this != null)
                 {
                     bool hasGeometry = BlockData.Vertices != null && BlockData.Vertices.Count > 0;
+                    int totalIndices = hasGeometry ? BlockData.Indices.Count : 0;
+
+                    if (_collider != null)
+                    {
+                        if (hasGeometry && _collisionMesh != null)
+                        {
+                            _collisionMesh.Clear();
+                            _collisionMesh.SetVertices(BlockData.Vertices);
+                            _collisionMesh.SetIndices(BlockData.Indices, MeshTopology.Triangles, 0, false);
+
+                            int collisionMeshId = _collisionMesh.GetInstanceID();
+                            ThreadPool.QueueUserWorkItem(_ =>
+                            {
+                                Physics.BakeMesh(collisionMeshId, false);
+                                ThreadManager.ExecuteOnMainThread(() =>
+                                {
+                                    if (_collider != null && _collisionMesh != null && !Disposed)
+                                    {
+                                        _collider.sharedMesh = _collisionMesh;
+                                    }
+                                });
+                            });
+                        }
+                        else
+                        {
+                            _collider.sharedMesh = null;
+                        }
+                    }
 
                     if (_mesh != null)
                     {
@@ -122,32 +190,9 @@ namespace Assets.Generation
                         }
                     }
                     
-                    if (hasGeometry)
+                    if (hasGeometry && totalIndices > 0)
                     {
-                        StartFadeIn();
-                    }
-
-                    if (_collider != null)
-                    {
-                        if (hasGeometry && _mesh != null && _mesh.vertexCount > 0)
-                        {
-                            int meshId = _mesh.GetInstanceID();
-                            ThreadPool.QueueUserWorkItem(_ =>
-                            {
-                                Physics.BakeMesh(meshId, false);
-                                ThreadManager.ExecuteOnMainThread(() =>
-                                {
-                                    if (_collider != null && _mesh != null && !Disposed)
-                                    {
-                                        _collider.sharedMesh = _mesh;
-                                    }
-                                });
-                            });
-                        }
-                        else
-                        {
-                            _collider.sharedMesh = null;
-                        }
+                        StartChunkConstruction(totalIndices);
                     }
                 }
 
@@ -219,9 +264,9 @@ namespace Assets.Generation
                 return 0;
         }
 
-        private void StartFadeIn()
+        private void StartChunkConstruction(int totalIndices)
         {
-            if (_renderer == null)
+            if (_renderer == null || _mesh == null)
                 return;
 
             if (_fadeCoroutine != null)
@@ -229,62 +274,65 @@ namespace Assets.Generation
                 StopCoroutine(_fadeCoroutine);
             }
 
-            _fadeCoroutine = StartCoroutine(FadeInRoutine());
+            _fadeCoroutine = StartCoroutine(ChunkConstructionRoutine(totalIndices));
         }
 
-        private IEnumerator FadeInRoutine()
+        private IEnumerator ChunkConstructionRoutine(int totalIndices)
         {
-            if (_renderer == null)
+            if (_renderer == null || _mesh == null)
+                yield break;
+
+            int totalTriangles = totalIndices / 3;
+            if (totalTriangles <= 0)
                 yield break;
 
             float duration = (_world != null && _world.ChunkFadeInDuration > 0.05f)
-                ? _world.ChunkFadeInDuration
-                : 0.45f;
+                ? Mathf.Min(_world.ChunkFadeInDuration, 0.45f)
+                : 0.28f;
 
             MaterialPropertyBlock block = new MaterialPropertyBlock();
             Material mat = (_world != null && _world.WorldMaterial != null) ? _world.WorldMaterial : null;
 
-            block.SetColor(_wColorId, Color.black);
-            block.SetColor(_colorId, Color.black);
-            block.SetColor(_baseColorId, Color.black);
-            block.SetColor(_emissionColorId, Color.black);
-            block.SetFloat(_wThicknessId, 0f);
-            block.SetFloat(_wEmissionId, 0f);
+            Color baseWireColor = (mat != null && mat.HasProperty(_wColorId)) ? mat.GetColor(_wColorId) : Color.cyan;
+            float baseEmission = (mat != null && mat.HasProperty(_wEmissionId)) ? mat.GetFloat(_wEmissionId) : 2.5f;
+
+            _renderer.GetPropertyBlock(block);
+            block.SetColor(_wColorId, Color.Lerp(baseWireColor, Color.white, 0.35f));
+            block.SetFloat(_wEmissionId, baseEmission * 1.6f);
             _renderer.SetPropertyBlock(block);
+
+            _mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, 0, MeshTopology.Triangles));
 
             float elapsed = 0f;
 
             while (elapsed < duration)
             {
-                if (Disposed || this == null || _renderer == null)
+                if (Disposed || this == null || _mesh == null || _renderer == null)
                     yield break;
 
                 elapsed += UnityEngine.Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                float easeT = 1.0f - (1.0f - t) * (1.0f - t);
+                float progress = Mathf.Clamp01(elapsed / duration);
 
-                Color targetColor = (mat != null && mat.HasProperty(_wColorId)) ? mat.GetColor(_wColorId) : Color.white;
-                float targetThickness = (mat != null && mat.HasProperty(_wThicknessId)) ? mat.GetFloat(_wThicknessId) : 0.06f;
-                float targetEmission = (mat != null && mat.HasProperty(_wEmissionId)) ? mat.GetFloat(_wEmissionId) : 2.0f;
+                int visibleTriangles = Mathf.Clamp(Mathf.CeilToInt(totalTriangles * progress), 1, totalTriangles);
+                int visibleIndices = visibleTriangles * 3;
 
-                Color curColor = Color.Lerp(Color.black, targetColor, easeT);
-                float curThickness = Mathf.Lerp(0f, targetThickness, easeT);
-                float curEmission = Mathf.Lerp(0f, targetEmission, easeT);
+                _mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, visibleIndices, MeshTopology.Triangles));
+
+                float glowFade = 1.0f - progress;
+                Color curWire = Color.Lerp(baseWireColor, Color.white, glowFade * 0.35f);
+                float curEmission = Mathf.Lerp(baseEmission, baseEmission * 1.6f, glowFade);
 
                 _renderer.GetPropertyBlock(block);
-                block.SetColor(_wColorId, curColor);
-                block.SetColor(_colorId, curColor);
-                block.SetColor(_baseColorId, curColor);
-                block.SetColor(_emissionColorId, curColor * (curEmission / Mathf.Max(targetEmission, 0.01f)));
-                block.SetFloat(_wThicknessId, curThickness);
+                block.SetColor(_wColorId, curWire);
                 block.SetFloat(_wEmissionId, curEmission);
                 _renderer.SetPropertyBlock(block);
 
                 yield return null;
             }
 
-            if (!Disposed && this != null && _renderer != null)
+            if (!Disposed && this != null && _mesh != null && _renderer != null)
             {
+                _mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, totalIndices, MeshTopology.Triangles));
                 _renderer.SetPropertyBlock(null);
             }
             _fadeCoroutine = null;
@@ -312,6 +360,13 @@ namespace Assets.Generation
                         _mesh.Clear();
                         Destroy(_mesh);
                         _mesh = null;
+                    }
+
+                    if (_collisionMesh != null)
+                    {
+                        _collisionMesh.Clear();
+                        Destroy(_collisionMesh);
+                        _collisionMesh = null;
                     }
 
                     if (gameObject != null)
