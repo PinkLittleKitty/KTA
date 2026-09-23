@@ -56,6 +56,7 @@ public class TimeControl : MonoBehaviour
     public Toggle invertToggle;
 
     private Movement movement;
+    private RiskPoints riskPoints;
 
     private float targetGameOver;
 
@@ -106,6 +107,9 @@ public class TimeControl : MonoBehaviour
         targetGameOver = 1f;
         
         targetScore = 1f;
+        
+        if (riskPoints != null)
+            riskPoints.ResetCombo();
         
         TutorialGO = GameObject.FindGameObjectWithTag("OwO");
         
@@ -212,6 +216,9 @@ public class TimeControl : MonoBehaviour
         UpdateControlUI();
         
         movement = go.GetComponentInChildren<Movement>();
+        riskPoints = go.GetComponentInChildren<RiskPoints>();
+        if (riskPoints != null)
+            riskPoints.Init(this, movement);
         
         go.GetComponent<ShipCollision>().Control = this.GetComponent<TimeControl>();
         
@@ -289,8 +296,9 @@ public class TimeControl : MonoBehaviour
         if (!isUsing)
             wasPressed = Input.GetKey(KeyCode.Space);
 
+        float multiplier = (riskPoints != null) ? riskPoints.CurrentMultiplier : 1f;
         if (!movement.IsInSpawn)
-            score += Time.deltaTime * 8;
+            score += Time.deltaTime * 8 * multiplier;
         
         if (score < 125)
             movement.Speed = 12;
@@ -349,6 +357,22 @@ public class TimeControl : MonoBehaviour
     public void InvertControls()
     {
         Options.Invert = !Options.Invert;
+    }
+
+    public void AddRiskyScore(float bonusScore)
+    {
+        if (isLost)
+            return;
+
+        score += bonusScore;
+
+        if (score > PlayerPrefs.GetInt("HighScore", 0))
+        {
+            int intScore = (int)score;
+            PlayerPrefs.SetInt("HighScore", intScore);
+            highScoreText.text = intScore.ToString();
+            PlayerPrefs.Save();
+        }
     }
 
     Vector2 Lerp(Vector2 a, Vector2 b, float d)

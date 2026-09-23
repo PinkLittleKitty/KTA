@@ -225,8 +225,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47642eeb84cbe8d4e85cd96095c5c7e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  RiskPointsNumber: 10
+  ComboDuration: 3
+  MaxMultiplier: 10
+  MinTimeBetweenRiskyEvents: 0.5
+  ContinuousSkimInterval: 0.8
+  RiskyAudioClip: {fileID: 8300000, guid: 996043edf10844cc3b18eeec63218264, type: 3}
+  RiskyAudioSource: {fileID: 0}
+  ComboText: {fileID: 0}
   Colision: {fileID: 1639510343724944750}
-  RiskPointsNumber: 0
   World: {fileID: 0}
 --- !u!1 &2531699476955309903
 GameObject:
