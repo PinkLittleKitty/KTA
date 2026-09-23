@@ -47,7 +47,7 @@ public class TimeControl : MonoBehaviour
 
     public AudioClip gameOverClip;
 
-    public Text invertText;
+    public TextMeshProUGUI invertText;
 
     public Image invertCheck;
 

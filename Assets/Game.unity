@@ -2869,7 +2869,7 @@ MonoBehaviour:
   TutorialGO: {fileID: 1112321167}
   sound: {fileID: 1079132436}
   gameOverClip: {fileID: 8300000, guid: 21044b17089154b019bcfaf2a8e8ef6e, type: 3}
-  invertText: {fileID: 0}
+  invertText: {fileID: 563852691}
   invertCheck: {fileID: 1206450810}
   optionsButton: {fileID: 700650091}
   invertToggle: {fileID: 1954628643}

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Threading;
 using UnityEngine;
 using Assets.Rendering;
@@ -17,30 +18,43 @@ namespace Assets.Generation
         public bool Disposed;
 
         private Mesh _mesh;
+        private MeshFilter _filter;
+        private MeshRenderer _renderer;
+        private MeshCollider _collider;
         private World _world;
+        private Coroutine _fadeCoroutine;
+
+        private static readonly int _wColorId = Shader.PropertyToID("_WColor");
+        private static readonly int _colorId = Shader.PropertyToID("_Color");
+        private static readonly int _baseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int _emissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly int _wThicknessId = Shader.PropertyToID("_WThickness");
+        private static readonly int _wEmissionId = Shader.PropertyToID("_WEmission");
+
         private readonly float[] _blocks = new float[PointsPerAxis * PointsPerAxis * PointsPerAxis];
         private readonly WorldGenerator _generator = new WorldGenerator();
         private readonly Vector3[] _vertCache = new Vector3[12];
 
-        void Start()
+        void Awake()
         {
-            // Inicialización de los componentes del chunk
             _mesh = new Mesh();
-            gameObject.AddComponent<MeshCollider>();
-            MeshFilter Filter = gameObject.AddComponent<MeshFilter>();
-            Filter.mesh = _mesh;
-            MeshRenderer Renderer = gameObject.AddComponent<MeshRenderer>();
-            Renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            Renderer.receiveShadows = false;
-            Renderer.material = _world.WorldMaterial;
+            _filter = gameObject.AddComponent<MeshFilter>();
+            _filter.mesh = _mesh;
+            _renderer = gameObject.AddComponent<MeshRenderer>();
+            _renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _renderer.receiveShadows = false;
+            _collider = gameObject.AddComponent<MeshCollider>();
         }
 
         public void Init(Vector3 Position, World World)
         {
-            // Inicialización del chunk
             _world = World;
             this.Position = Position;
             Lod = 1;
+            if (_renderer != null && _world != null && _world.WorldMaterial != null)
+            {
+                _renderer.sharedMaterial = _world.WorldMaterial;
+            }
         }
 
         public void Generate()
@@ -95,18 +109,27 @@ namespace Assets.Generation
             {
                 if (!Disposed && this != null)
                 {
+                    bool hasGeometry = BlockData.Vertices != null && BlockData.Vertices.Count > 0;
+
                     if (_mesh != null)
                     {
                         _mesh.Clear();
-                        _mesh.SetVertices(BlockData.Vertices);
-                        _mesh.SetNormals(BlockData.Normals);
-                        _mesh.SetIndices(BlockData.Indices, MeshTopology.Triangles, 0, false);
+                        if (hasGeometry)
+                        {
+                            _mesh.SetVertices(BlockData.Vertices);
+                            _mesh.SetNormals(BlockData.Normals);
+                            _mesh.SetIndices(BlockData.Indices, MeshTopology.Triangles, 0, false);
+                        }
                     }
                     
-                    MeshCollider collider = GetComponent<MeshCollider>();
-                    if (collider != null)
+                    if (hasGeometry)
                     {
-                        if (_mesh != null && _mesh.vertexCount > 0)
+                        StartFadeIn();
+                    }
+
+                    if (_collider != null)
+                    {
+                        if (hasGeometry && _mesh != null && _mesh.vertexCount > 0)
                         {
                             int meshId = _mesh.GetInstanceID();
                             ThreadPool.QueueUserWorkItem(_ =>
@@ -114,16 +137,16 @@ namespace Assets.Generation
                                 Physics.BakeMesh(meshId, false);
                                 ThreadManager.ExecuteOnMainThread(() =>
                                 {
-                                    if (collider != null && _mesh != null && !Disposed)
+                                    if (_collider != null && _mesh != null && !Disposed)
                                     {
-                                        collider.sharedMesh = _mesh;
+                                        _collider.sharedMesh = _mesh;
                                     }
                                 });
                             });
                         }
                         else
                         {
-                            collider.sharedMesh = null;
+                            _collider.sharedMesh = null;
                         }
                     }
                 }
@@ -196,6 +219,77 @@ namespace Assets.Generation
                 return 0;
         }
 
+        private void StartFadeIn()
+        {
+            if (_renderer == null)
+                return;
+
+            if (_fadeCoroutine != null)
+            {
+                StopCoroutine(_fadeCoroutine);
+            }
+
+            _fadeCoroutine = StartCoroutine(FadeInRoutine());
+        }
+
+        private IEnumerator FadeInRoutine()
+        {
+            if (_renderer == null)
+                yield break;
+
+            float duration = (_world != null && _world.ChunkFadeInDuration > 0.05f)
+                ? _world.ChunkFadeInDuration
+                : 0.45f;
+
+            MaterialPropertyBlock block = new MaterialPropertyBlock();
+            Material mat = (_world != null && _world.WorldMaterial != null) ? _world.WorldMaterial : null;
+
+            block.SetColor(_wColorId, Color.black);
+            block.SetColor(_colorId, Color.black);
+            block.SetColor(_baseColorId, Color.black);
+            block.SetColor(_emissionColorId, Color.black);
+            block.SetFloat(_wThicknessId, 0f);
+            block.SetFloat(_wEmissionId, 0f);
+            _renderer.SetPropertyBlock(block);
+
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                if (Disposed || this == null || _renderer == null)
+                    yield break;
+
+                elapsed += UnityEngine.Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float easeT = 1.0f - (1.0f - t) * (1.0f - t);
+
+                Color targetColor = (mat != null && mat.HasProperty(_wColorId)) ? mat.GetColor(_wColorId) : Color.white;
+                float targetThickness = (mat != null && mat.HasProperty(_wThicknessId)) ? mat.GetFloat(_wThicknessId) : 0.06f;
+                float targetEmission = (mat != null && mat.HasProperty(_wEmissionId)) ? mat.GetFloat(_wEmissionId) : 2.0f;
+
+                Color curColor = Color.Lerp(Color.black, targetColor, easeT);
+                float curThickness = Mathf.Lerp(0f, targetThickness, easeT);
+                float curEmission = Mathf.Lerp(0f, targetEmission, easeT);
+
+                _renderer.GetPropertyBlock(block);
+                block.SetColor(_wColorId, curColor);
+                block.SetColor(_colorId, curColor);
+                block.SetColor(_baseColorId, curColor);
+                block.SetColor(_emissionColorId, curColor * (curEmission / Mathf.Max(targetEmission, 0.01f)));
+                block.SetFloat(_wThicknessId, curThickness);
+                block.SetFloat(_wEmissionId, curEmission);
+                _renderer.SetPropertyBlock(block);
+
+                yield return null;
+            }
+
+            if (!Disposed && this != null && _renderer != null)
+            {
+                _renderer.SetPropertyBlock(null);
+            }
+            _fadeCoroutine = null;
+        }
+
         public void Dispose()
         {
             if (Disposed)
@@ -207,6 +301,12 @@ namespace Assets.Generation
             {
                 if (this != null)
                 {
+                    if (_fadeCoroutine != null)
+                    {
+                        StopCoroutine(_fadeCoroutine);
+                        _fadeCoroutine = null;
+                    }
+
                     if (_mesh != null)
                     {
                         _mesh.Clear();

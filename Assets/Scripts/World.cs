@@ -14,6 +14,8 @@ public class World : MonoBehaviour {
     private MeshQueue _meshQueue;
     private GenerationQueue _generationQueue;
     public int ChunkLoaderRadius = 8;
+    [Range(0.1f, 2.0f)]
+    public float ChunkFadeInDuration = 0.45f;
     public bool Loaded { get; set; }
     public Slider sliderUI;
     public Text chunksNum;
