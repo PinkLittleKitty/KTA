@@ -179,7 +179,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'OST por:'
+  m_text: 'OST & SFX por:'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8c7fff2760b81bf4694845f9ddd01f67, type: 2}
   m_sharedMaterial: {fileID: 2336424845642424833, guid: 8c7fff2760b81bf4694845f9ddd01f67,
@@ -4010,8 +4010,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   musicbg:
-  - {fileID: 8300000, guid: bbebbe3b40a1dbf4d9a471414bf89102, type: 3}
-  - {fileID: 8300000, guid: f1c38b3eeae92dd4281b99d67c328ebd, type: 3}
+  - {fileID: 8300000, guid: 8e1fe754b35990d2d9c5015f3f0330c2, type: 3}
+  - {fileID: 0}
 --- !u!114 &1079132439
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9981,7 +9981,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Maximiliano Morales
+  m_text: 'Maximiliano Morales
+
+    Elian Mercado'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8c7fff2760b81bf4694845f9ddd01f67, type: 2}
   m_sharedMaterial: {fileID: 2336424845642424833, guid: 8c7fff2760b81bf4694845f9ddd01f67,
