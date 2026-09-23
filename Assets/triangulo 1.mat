@@ -166,7 +166,7 @@ Material:
     - _Surface: 0
     - _TwoSided: 0
     - _UVSec: 0
-    - _WEmission: 3.2707496
+    - _WEmission: 2.669043
     - _WGloss: 0
     - _WInvert: 2
     - _WLight: 2
@@ -175,7 +175,7 @@ Material:
     - _WOpacity: 1
     - _WParam: 0
     - _WStyle: 0
-    - _WThickness: 0.06993691
+    - _WThickness: 0.059791237
     - _WTransparency: 0
     - _WUV: 0
     - _WireThickness: 1
@@ -183,14 +183,14 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BackgroundColor: {r: 0.05, g: 0.05, b: 0.2, a: 1}
-    - _BaseColor: {r: 0.65, g: 0.12557526, b: 0.28155097, a: 1}
-    - _Color: {r: 0.65, g: 0.12557526, b: 0.28155097, a: 1}
-    - _EmissionColor: {r: 1.0902499, g: 0.21062835, b: 0.47224757, a: 1.0902499}
+    - _BaseColor: {r: 0.65, g: 0.11866755, b: 0.29051235, a: 1}
+    - _Color: {r: 0.65, g: 0.11866755, b: 0.29051235, a: 1}
+    - _EmissionColor: {r: 0.889681, g: 0.16242503, b: 0.39763588, a: 0.889681}
     - _FillColor: {r: 0, g: 0, b: 0, a: 0}
     - _GColor: {r: 0.5294118, g: 0, b: 1, a: 1}
     - _LineColor: {r: 0.26165402, g: 0.011569952, b: 0.49056602, a: 0.95686275}
     - _MainColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _WColor: {r: 1, g: 0.19319272, b: 0.43315536, a: 1}
+    - _WColor: {r: 1, g: 0.18256547, b: 0.4469421, a: 1}
     - _WireColor: {r: 0.47298518, g: 0, b: 0.6603774, a: 1}
   m_BuildTextureStacks: []

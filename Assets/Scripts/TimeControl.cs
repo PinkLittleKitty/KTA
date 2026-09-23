@@ -76,6 +76,9 @@ public class TimeControl : MonoBehaviour
 
     public Cinemachine.CinemachineVirtualCamera virtualCamera;
 
+    private bool isFirstStart = true;
+    private bool isIntroPlaying = false;
+
     void Start()
     {
         isLost = true;
@@ -96,6 +99,71 @@ public class TimeControl : MonoBehaviour
         invertToggle.isOn = PlayerPrefs.GetInt("Invertir") == 0 ? true : false;
         
         PlayerPrefs.Save();
+
+        SetupCameraTitleState();
+    }
+
+    private Cinemachine.CinemachineVirtualCamera titleVirtualCamera;
+    private static readonly Vector3 titleCamPos = new Vector3(0f, 0f, -10f);
+    private static readonly Quaternion titleCamRot = new Quaternion(-0.102073275f, 0.03341496f, -0.003431297f, -0.9942096f);
+
+    private void EnsureTitleCamera()
+    {
+        if (titleVirtualCamera == null)
+        {
+            GameObject titleCamObj = GameObject.Find("CM Title");
+            if (titleCamObj == null)
+            {
+                titleCamObj = new GameObject("CM Title");
+            }
+            titleVirtualCamera = titleCamObj.GetComponent<Cinemachine.CinemachineVirtualCamera>();
+            if (titleVirtualCamera == null)
+            {
+                titleVirtualCamera = titleCamObj.AddComponent<Cinemachine.CinemachineVirtualCamera>();
+            }
+            titleVirtualCamera.transform.position = titleCamPos;
+            titleVirtualCamera.transform.rotation = titleCamRot;
+            if (virtualCamera != null)
+            {
+                titleVirtualCamera.m_Lens = virtualCamera.m_Lens;
+            }
+            titleVirtualCamera.Priority = 20;
+        }
+    }
+
+    private void SetupCameraTitleState()
+    {
+        EnsureTitleCamera();
+
+        if (titleVirtualCamera != null)
+        {
+            titleVirtualCamera.transform.position = titleCamPos;
+            titleVirtualCamera.transform.rotation = titleCamRot;
+            titleVirtualCamera.Priority = 20;
+        }
+
+        if (virtualCamera != null)
+        {
+            virtualCamera.m_Follow = null;
+            virtualCamera.m_LookAt = null;
+            virtualCamera.Priority = 10;
+            virtualCamera.transform.position = titleCamPos;
+            virtualCamera.transform.rotation = titleCamRot;
+            virtualCamera.PreviousStateIsValid = false;
+        }
+
+        if (cameraObject != null)
+        {
+            cameraObject.transform.position = titleCamPos;
+            cameraObject.transform.rotation = titleCamRot;
+
+            Cinemachine.CinemachineBrain brain = cameraObject.GetComponent<Cinemachine.CinemachineBrain>();
+            if (brain != null)
+            {
+                brain.m_DefaultBlend = new Cinemachine.CinemachineBlendDefinition(Cinemachine.CinemachineBlendDefinition.Style.Cut, 0f);
+                brain.enabled = true;
+            }
+        }
     }
 
     public void Lose()
@@ -150,13 +218,16 @@ public class TimeControl : MonoBehaviour
 
     IEnumerator PlayAnim()
     {
-        while (isLost)
+        while (isLost && !isIntroPlaying)
         {
             yield return new WaitForSecondsRealtime(0.5f);
+            if (!isLost || isIntroPlaying) break;
             targetStart = 1;
             yield return new WaitForSecondsRealtime(0.5f);
+            if (!isLost || isIntroPlaying) break;
             targetStart = 0;
         }
+        targetStart = 0;
     }
 
     public void StartGame()
@@ -166,6 +237,8 @@ public class TimeControl : MonoBehaviour
 
     public void Restart()
     {
+        if (isIntroPlaying)
+            return;
         if (!isLost)
             return;
         StartCoroutine(RestartCoroutine());
@@ -173,73 +246,165 @@ public class TimeControl : MonoBehaviour
 
     IEnumerator RestartCoroutine()
     {
+        isIntroPlaying = true;
+
         targetStart = 0;
         targetRestart = 0;
         targetTitle = 0;
-        
-        isLost = false;
-        
+
         Time.timeScale = 1f;
-        
+
         score = 0;
         targetScore = 0;
-        
+
         energyLeft = 100;
-        
+
         Destroy(GameObject.FindGameObjectWithTag("Player"));
         Destroy(GameObject.FindGameObjectWithTag("Debris"));
-        
+
         optionsButton.gameObject.SetActive(false);
-        
+
         GameObject debris = new GameObject("Debris");
         debris.tag = "Debris";
-        
-        OpenSimplexNoise.Load(Random.Range(int.MinValue, int.MaxValue));
 
         World world = GameObject.FindGameObjectWithTag("World").GetComponent<World>();
-        Chunk[] chunks = null;
-        
-        lock (world.Chunks)
+
+        if (!isFirstStart)
         {
-            chunks = world.Chunks.Values.ToList().ToArray();
+            OpenSimplexNoise.Load(Random.Range(int.MinValue, int.MaxValue));
+            Chunk[] chunks = null;
+            lock (world.Chunks)
+            {
+                chunks = world.Chunks.Values.ToList().ToArray();
+            }
+            for (int i = 0; i < chunks.Length; i++)
+            {
+                world.RemoveChunk(chunks[i]);
+            }
         }
-        
-        for (int i = 0; i < chunks.Length; i++)
+        else
         {
-            world.RemoveChunk(chunks[i]);
+            isFirstStart = false;
         }
-        
-        GameObject go = Instantiate<GameObject>(playerPrefab, Vector3.zero, Quaternion.identity);
+
+        Vector3 titleCamPos = new Vector3(0f, 0f, -10f);
+        Quaternion titleCamRot = new Quaternion(-0.102073275f, 0.03341496f, -0.003431297f, -0.9942096f);
+        Vector3 chaseCamPos = new Vector3(0f, 4f, -8f);
+        Quaternion chaseCamRot = Quaternion.LookRotation(new Vector3(0f, -4f, 8f));
+
+        Vector3 introStartPos = new Vector3(0f, -1.0f, -22f);
+        Vector3 introEndPos = Vector3.zero;
+
+        SetupCameraTitleState();
+
+        GameObject go = Instantiate<GameObject>(playerPrefab, introStartPos, Quaternion.identity);
 
         world.Player = go;
+        cameraObject.GetComponent<ChunkLoader>().Player = go;
 
-        UpdateControlUI();
-        
         movement = go.GetComponentInChildren<Movement>();
+        if (movement != null)
+        {
+            movement.Lock();
+            movement.StartIntroTrails();
+        }
+
+        ShipCollision collision = go.GetComponent<ShipCollision>();
+        if (collision != null)
+        {
+            collision.Control = this;
+            collision.Lock();
+        }
+
         riskPoints = go.GetComponentInChildren<RiskPoints>();
         if (riskPoints != null)
             riskPoints.Init(this, movement);
-        
-        go.GetComponent<ShipCollision>().Control = this.GetComponent<TimeControl>();
-        
-        GameObject.FindGameObjectWithTag("MainCamera").GetComponent<FollowShip>().TargetShip = go;
-        
-        cameraObject.GetComponent<ChunkLoader>().Player = go;
-        
-        virtualCamera.m_LookAt = go.transform;
-        virtualCamera.m_Follow = go.transform;
-        
-        GetComponent<AudioSource>().clip = gameOverClip;
-        
-        GetComponent<AudioSource>().Play();
-        
-        yield return null;
+
+        FollowShip followShip = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<FollowShip>();
+        if (followShip != null)
+            followShip.TargetShip = go;
+
+        if (joystick != null)
+            joystick.SetActive(false);
+
+        AudioSource audioSource = GetComponent<AudioSource>();
+
+        float introDuration = 1.2f;
+        float elapsed = 0f;
+        bool blendTriggered = false;
+
+        Cinemachine.CinemachineBrain brain = cameraObject != null ? cameraObject.GetComponent<Cinemachine.CinemachineBrain>() : null;
+
+        while (elapsed < introDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / introDuration);
+
+            float z = Mathf.Lerp(introStartPos.z, introEndPos.z, t * t);
+            float y = Mathf.Lerp(introStartPos.y, introEndPos.y, t);
+            float pitch = Mathf.Lerp(-4f, 0f, t);
+
+            if (go != null)
+            {
+                go.transform.position = new Vector3(0f, y, z);
+                go.transform.rotation = Quaternion.Euler(pitch, 0f, 0f);
+            }
+
+            if (!blendTriggered && z >= -10f)
+            {
+                blendTriggered = true;
+                if (movement != null && movement.SwooshClip != null && audioSource != null)
+                {
+                    audioSource.PlayOneShot(movement.SwooshClip);
+                }
+
+                if (virtualCamera != null && go != null)
+                {
+                    virtualCamera.transform.position = titleCamPos;
+                    virtualCamera.transform.rotation = titleCamRot;
+                    virtualCamera.m_Follow = go.transform;
+                    virtualCamera.m_LookAt = go.transform;
+                    virtualCamera.PreviousStateIsValid = false;
+                    virtualCamera.Priority = 30;
+                }
+
+                if (brain != null)
+                {
+                    brain.m_DefaultBlend = new Cinemachine.CinemachineBlendDefinition(
+                        Cinemachine.CinemachineBlendDefinition.Style.EaseInOut, 0.7f);
+                }
+            }
+
+            yield return null;
+        }
+
+        if (go != null)
+        {
+            go.transform.position = introEndPos;
+            go.transform.rotation = Quaternion.identity;
+        }
+
+        if (movement != null)
+        {
+            movement.CurrentSpeed = 6f;
+            movement.Unlock();
+        }
+
+        if (collision != null)
+        {
+            collision.Reset();
+        }
+
+        UpdateControlUI();
+
+        isLost = false;
+        isIntroPlaying = false;
     }
 
 
     void Update()
     {
-        if (isLost && Input.GetKeyDown(KeyCode.Space))
+        if (isLost && !isIntroPlaying && Input.GetKeyDown(KeyCode.Space))
             Restart();
 
         scoreText.text = ((int)score).ToString();

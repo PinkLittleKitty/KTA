@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Assets.Generation;
@@ -36,6 +36,11 @@ public class ShipCollision : MonoBehaviour
     {
         // Reinicia el estado de bloqueo de la nave
         _lock = false;
+    }
+
+    public void Lock()
+    {
+        _lock = true;
     }
 
     void Update()

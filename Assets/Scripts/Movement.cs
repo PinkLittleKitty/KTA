@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
@@ -59,6 +59,12 @@ public class Movement : MonoBehaviour
     public void Unlock()
     {
         _lock = false;
+    }
+
+    public float CurrentSpeed
+    {
+        get { return _speed; }
+        set { _speed = value; }
     }
 
     void Update()
@@ -161,5 +167,17 @@ public class Movement : MonoBehaviour
         Trail.transform.parent = (Debris != null) ? Debris.transform : null;
         Destroy(Trail.gameObject, Trail.time + 1);
         Trail = null;
+    }
+
+    public void StartIntroTrails()
+    {
+        StartTrail(ref LeftTrail, LeftPosition);
+        StartTrail(ref RightTrail, RightPosition);
+    }
+
+    public void StopIntroTrails()
+    {
+        StopTrail(ref LeftTrail);
+        StopTrail(ref RightTrail);
     }
 }
