@@ -24,7 +24,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 340
+  controlID: 37
   draggingID: 0
 --- !u!114 &2
 MonoBehaviour:
@@ -152,7 +152,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 341
+  controlID: 38
   draggingID: 0
 --- !u!114 &4
 MonoBehaviour:
@@ -178,7 +178,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 50}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 342
+  controlID: 39
   draggingID: 0
 --- !u!114 &5
 MonoBehaviour:
@@ -244,9 +244,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: da9a0000
+      m_SelectedIDs: d09a0000
       m_LastClickedID: 0
-      m_ExpandedIDs: 0653faffe6daffffeedffffffee4ffffeae9ffff20efffff3aefffff9aefffff54f8ffff56f8ffff58f8ffff5af8ffff8ef8ffff32faffffe0faffff
+      m_ExpandedIDs: 284fffff624fffff4453ffff8053ffff5a55ffff685dffffa25dffff8461ffffc061ffff9a63ffffee6bffff286cffff9a70ffffd670ffffb472ffffeedffffffee4ffffeae9ffff20efffff3aefffff9aefffff54f8ffff56f8ffff58f8ffff5af8ffff8ef8ffff32faffffe0faffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -289,15 +289,15 @@ MonoBehaviour:
     y: 0
     width: 1103
     height: 606
-  m_MinSize: {x: 100, y: 100}
-  m_MaxSize: {x: 4000, y: 4000}
+  m_MinSize: {x: 102, y: 121}
+  m_MaxSize: {x: 4002, y: 4021}
   m_ActualView: {fileID: 2}
   m_Panes:
   - {fileID: 8}
   - {fileID: 2}
   - {fileID: 9}
   m_Selected: 1
-  m_LastSelected: 2
+  m_LastSelected: 0
 --- !u!114 &8
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -730,9 +730,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 352
-    y: 128
+    y: 73
     width: 1101
-    height: 585
+    height: 546
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -816,7 +816,7 @@ MonoBehaviour:
     m_SkipHidden: 1
     m_SearchArea: 1
     m_Folders:
-    - Assets
+    - "Assets/Im\xE1genes"
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
@@ -824,15 +824,15 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets
+  - "Assets/Im\xE1genes"
   m_LastFoldersGridSize: -1
   m_LastProjectPath: /mnt/DiscoLocal3/UnityStuff/KTA
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 7}
-    m_SelectedIDs: a8720000
-    m_LastClickedID: 29352
+    m_SelectedIDs: d09a0000
+    m_LastClickedID: 39632
     m_ExpandedIDs: 00000000a872000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
@@ -861,7 +861,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 00000000a872000000ca9a3b
+    m_ExpandedIDs: 00000000a8720000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -886,10 +886,10 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: da9a0000
-    m_LastClickedInstanceID: 39642
+    m_SelectedInstanceIDs: d09a0000
+    m_LastClickedInstanceID: 39632
     m_HadKeyboardFocusLastEvent: 1
-    m_ExpandedInstanceIDs: c62300000000000066e60000
+    m_ExpandedInstanceIDs: c62300000000000066e600009ab40000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -962,7 +962,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 1
   m_Script: {fileID: 12006, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: InspectorWindow
+  m_Name: OdinValidatorWindow
   m_EditorClassIdentifier: 
   m_Children: []
   m_Position:
@@ -971,14 +971,14 @@ MonoBehaviour:
     y: 0
     width: 465
     height: 932
-  m_MinSize: {x: 275, y: 50}
+  m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 4000, y: 4000}
-  m_ActualView: {fileID: 14}
+  m_ActualView: {fileID: 15}
   m_Panes:
   - {fileID: 14}
   - {fileID: 15}
-  m_Selected: 0
-  m_LastSelected: 1
+  m_Selected: 1
+  m_LastSelected: 0
 --- !u!114 &14
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -1000,8 +1000,8 @@ MonoBehaviour:
     m_Tooltip: 
   m_Pos:
     serializedVersion: 2
-    x: 1455
-    y: 128
+    x: 1456
+    y: 19
     width: 464
     height: 911
   m_SerializedDataModeController:
