@@ -281,6 +281,7 @@ public class TimeControl : MonoBehaviour
             {
                 world.RemoveChunk(chunks[i]);
             }
+            AsteroidSpawner.Instance?.ResetAll();
         }
         else
         {

@@ -11471,6 +11471,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1880731489}
   - component: {fileID: 1880731488}
+  - component: {fileID: 1880731490}
   m_Layer: 0
   m_Name: World
   m_TagString: World
@@ -11515,6 +11516,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1880731490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1880731487}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9847c9861a13fca99d6104adec46463, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SpawnerEnabled: 1
+  InitialActiveAsteroids: 20
+  MaxActiveAsteroids: 300
+  TimeToMaxAsteroids: 300
+  BaseSpawnInterval: 0.25
+  MinSpawnInterval: 0.05
+  MinSpawnAheadDistance: 50
+  MaxSpawnAheadDistance: 260
+  DespawnBehindDistance: 35
+  MinSpreadRadius: 12
+  MaxHorizontalSpread: 70
+  MaxVerticalSpread: 50
+  _currentActiveLimit: 20
+  _flightTime: 0
+  AsteroidMaterial: {fileID: 2100000, guid: 2b0c1ec8ce36503c8b321d00e4ef0aa2, type: 2}
+  UseCustomWireColor: 1
+  WireColor: {r: 1, g: 1, b: 1, a: 1}
+  WireEmission: 1.6
+  MinTumbleSpeed: 12
+  MaxTumbleSpeed: 50
+  MaxDriftSpeed: 1.2
 --- !u!1 &1954628641
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,5 +1,18 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-8334307682818334405
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 4
 --- !u!21 &2100000
 Material:
   serializedVersion: 8
@@ -7,20 +20,30 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: triangulitos
-  m_Shader: {fileID: 45, guid: 0000000000000000f000000000000000, type: 0}
+  m_Name: triangulo 2
+  m_Shader: {fileID: 4800000, guid: f41b97872ce3bba439516a22765e895b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
-  - _EMISSION
+  - _ALPHATEST_ON
+  - _GLOW_ON
+  - _QUAD_ON
+  - _SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A
+  - _WLIGHT_UNLIT
+  - _WSTYLE_DEFAULT
+  - _WUV_UV0
   m_InvalidKeywords:
+  - _AA_ON
+  - _EMISSION
   - _ENVIRONMENTREFLECTIONS_OFF
+  - _MODE_BARY
   - _RECEIVE_SHADOWS_OFF
-  m_LightmapFlags: 2
+  m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
+  m_CustomRenderQueue: 2450
+  stringTagMap:
+    RenderType: TransparentCutout
   disabledShaderPasses: []
   m_LockedProperties: 
   m_SavedProperties:
@@ -31,10 +54,6 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _ClearCoatMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -74,6 +93,14 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _WMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -88,10 +115,12 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AASmooth: 1.6
     - _AlphaClip: 0
     - _Blend: 0
+    - _Brightness: 0.18
     - _BumpScale: 1
-    - _ClearCoat: 0
+    - _CellSize: 5
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
@@ -99,40 +128,69 @@ Material:
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
+    - _EmissionGain: 0.5
+    - _EmissionIntensity: 0.47
     - _EnvironmentReflections: 0
+    - _FDist: 0
+    - _FMode: 0
+    - _FPow: 5
+    - _Fade: 0
+    - _Fold: 31
+    - _GDist: 0.16
+    - _GEmission: 1.05
+    - _GPower: 1.25
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
+    - _Glow: 1
+    - _GridScale: 2
+    - _Limits: 1
+    - _LineWidth: 0.5
     - _Metallic: 0
-    - _Mode: 0
+    - _Mode: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.02
+    - _PulseSpeed: 0
+    - _Quad: 1
     - _QueueOffset: 0
     - _ReceiveShadows: 0
+    - _SampleGI: 0
+    - _ScanIntensity: 0
+    - _ScanSpeed: 0.6
+    - _ScanlineFreq: 10
+    - _ScanlineSpeed: 1
     - _Smoothness: 0.5
-    - _SmoothnessTextureChannel: 0
+    - _SmoothnessTextureChannel: 1
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _Surface: 0
+    - _TwoSided: 0
     - _UVSec: 0
+    - _WEmission: 3.2179377
+    - _WGloss: 0
+    - _WInvert: 2
+    - _WLight: 2
+    - _WMetal: 0
+    - _WMode: 3
+    - _WOpacity: 1
+    - _WParam: 0
+    - _WStyle: 0
+    - _WThickness: 0.06845072
+    - _WTransparency: 0
+    - _WUV: 0
+    - _WireThickness: 1
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.7071668, g: 0.41554904, b: 0.41005868, a: 1}
-    - _Color: {r: 0, g: 0.5019608, b: 1, a: 1}
-    - _EmissionColor: {r: 1.0078919, g: 0.5922627, b: 0.58443755, a: 1.4252534}
+    - _BackgroundColor: {r: 0.05, g: 0.05, b: 0.2, a: 1}
+    - _BaseColor: {r: 0.44432712, g: 0.2683032, b: 0.28277126, a: 1}
+    - _Color: {r: 0.44432712, g: 0.2683032, b: 0.28277126, a: 1}
+    - _EmissionColor: {r: 0.73323953, g: 0.4427605, b: 0.46663606, a: 1.0726459}
+    - _FillColor: {r: 0, g: 0, b: 0, a: 0}
+    - _GColor: {r: 0.5294118, g: 0, b: 1, a: 1}
+    - _LineColor: {r: 0.26165402, g: 0.011569952, b: 0.49056602, a: 0.95686275}
+    - _MainColor: {r: 0.1, g: 0.1, b: 0.1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _WColor: {r: 0.6835802, g: 0.41277415, b: 0.43503273, a: 1}
+    - _WireColor: {r: 0.47298518, g: 0, b: 0.6603774, a: 1}
   m_BuildTextureStacks: []
---- !u!114 &2015706701341353119
-MonoBehaviour:
-  m_ObjectHideFlags: 11
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  version: 4

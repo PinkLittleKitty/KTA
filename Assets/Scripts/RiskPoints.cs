@@ -136,18 +136,19 @@ public class RiskPoints : MonoBehaviour
         }
     }
 
-    private bool IsTerrain(Collider col)
+    private bool IsHazard(Collider col)
     {
         if (col == null) return false;
         if (col.GetComponent<Chunk>() != null) return true;
         if (col.transform.parent != null && col.transform.parent.CompareTag("World")) return true;
         if (col.gameObject.name.StartsWith("Chunk")) return true;
+        if (col.GetComponent<ProceduralAsteroid>() != null || col.gameObject.name.StartsWith("Asteroid")) return true;
         return false;
     }
 
     void OnTriggerEnter(Collider other)
     {
-        if (!IsTerrain(other)) return;
+        if (!IsHazard(other)) return;
         if (_timeControl != null && _timeControl.isLost) return;
         if (_movement != null && _movement.IsInSpawn) return;
 
@@ -162,7 +163,7 @@ public class RiskPoints : MonoBehaviour
 
     void OnTriggerStay(Collider other)
     {
-        if (!IsTerrain(other)) return;
+        if (!IsHazard(other)) return;
         if (_timeControl != null && _timeControl.isLost) return;
         if (_movement != null && _movement.IsInSpawn) return;
 
@@ -180,7 +181,7 @@ public class RiskPoints : MonoBehaviour
 
     void OnTriggerExit(Collider other)
     {
-        if (IsTerrain(other))
+        if (IsHazard(other))
         {
             _isSkimming = false;
             _skimTimer = 0f;

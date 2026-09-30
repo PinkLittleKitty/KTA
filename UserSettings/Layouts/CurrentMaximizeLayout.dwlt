@@ -24,7 +24,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 1527
+  controlID: 20256
   draggingID: 0
 --- !u!114 &2
 MonoBehaviour:
@@ -152,7 +152,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 1528
+  controlID: 20257
   draggingID: 0
 --- !u!114 &4
 MonoBehaviour:
@@ -178,7 +178,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 50}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 1529
+  controlID: 20233
   draggingID: 0
 --- !u!114 &5
 MonoBehaviour:
@@ -244,9 +244,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 42990000
-      m_LastClickedID: 39234
-      m_ExpandedIDs: cc24f5ffe4daffffecdffffffce4ffffe8e9ffff1eefffff38efffff98efffff52f8ffff54f8ffff56f8ffff58f8ffff8cf8ffff30faffffe0faffff94990000
+      m_SelectedIDs: c0d5ffff
+      m_LastClickedID: 0
+      m_ExpandedIDs: 78f6dfffcc24f5ffe4daffffecdffffffce4ffffe8e9ffff1eefffff38efffff98efffff52f8ffff54f8ffff56f8ffff58f8ffff8cf8ffff30faffffe0faffff94990000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -816,7 +816,7 @@ MonoBehaviour:
     m_SkipHidden: 1
     m_SearchArea: 1
     m_Folders:
-    - Assets/Prefabs
+    - Assets
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
@@ -824,16 +824,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 64
   m_LastFolders:
-  - Assets/Prefabs
+  - Assets
   m_LastFoldersGridSize: -1
   m_LastProjectPath: /mnt/DiscoLocal3/UnityStuff/KTA
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
-    scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: d89a0000
-    m_LastClickedID: 39640
-    m_ExpandedIDs: 00000000a8720000d89a000000ca9a3b
+    scrollPos: {x: 0, y: 79}
+    m_SelectedIDs: a8720000
+    m_LastClickedID: 29352
+    m_ExpandedIDs: 00000000a8720000da9a000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -861,7 +861,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 00000000a872000000ca9a3b
+    m_ExpandedIDs: 00000000a8720000da9a000000ca9a3b
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -886,9 +886,9 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 42990000
-    m_LastClickedInstanceID: 39234
-    m_HadKeyboardFocusLastEvent: 1
+    m_SelectedInstanceIDs: c0d5ffff
+    m_LastClickedInstanceID: -10816
+    m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: c62300000000000066e600009ab40000929b0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
