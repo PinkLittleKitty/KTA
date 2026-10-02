@@ -19,7 +19,23 @@ public class KeyPressTimer : MonoBehaviour
         if (player == null)
             player = GameObject.FindGameObjectWithTag("Player");
         if (keyIndicator == null)
-            keyIndicator = GetComponentInChildren<Image>(true);
+        {
+            var images = GetComponentsInChildren<Image>(true);
+            foreach (var img in images)
+            {
+                if (!img.CompareTag("Joystick") && !img.name.ToLower().Contains("joystick"))
+                {
+                    keyIndicator = img;
+                    break;
+                }
+            }
+        }
+
+        if (keyIndicator == null)
+        {
+            Destroy(this);
+            return;
+        }
     }
 
     void Update()

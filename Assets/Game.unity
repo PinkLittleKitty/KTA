@@ -3001,7 +3001,6 @@ MonoBehaviour:
   playerPrefab: {fileID: 7506454419537336972, guid: 57ba3b71631d7c94b84091895acad7f8,
     type: 3}
   joystick: {fileID: 0}
-  TutorialGO: {fileID: 1112321167}
   sound: {fileID: 1079132436}
   gameOverClip: {fileID: 8300000, guid: 21044b17089154b019bcfaf2a8e8ef6e, type: 3}
   invertText: {fileID: 563852691}
